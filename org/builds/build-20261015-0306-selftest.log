@@ -1,0 +1,6 @@
+target: selftest
+agent: qwen
+status: pass
+exit: 0
+started: 2026-10-15T03:06:54
+------------------------------------------------------------

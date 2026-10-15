@@ -19,3 +19,7 @@
 {"ts":"2026-10-14T08:05","agent":"qwen","type":"card_done","card_id":"card-007"}
 {"ts":"2026-10-14T08:35","agent":"qwen","type":"card_create","card_id":"card-008"}
 {"ts":"2026-10-14T09:12","agent":"qwen","type":"identity_fix","note":"org addresses the human as Brad (CEO ruling); inbox human -> brad; pings now carry work links; card-008 queued (dashboard pages/drawers)"}
+{"ts":"2026-10-14T09:20","agent":"qwen","type":"card_claim","card_id":"card-004"}
+{"ts":"2026-10-14T09:20","agent":"qwen","type":"card_claim","card_id":"card-005"}
+{"ts":"2026-10-14T09:20","agent":"qwen","type":"card_claim","card_id":"card-006"}
+{"ts":"2026-10-14T09:25","agent":"qwen","type":"message","note":"ping resolved: scopes confirmed, one-liners drafted (org/playbooks/one-liners.md), moved to done/"}

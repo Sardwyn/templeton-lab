@@ -1,0 +1,50 @@
+target: mulattice-tests
+agent: qwen
+status: pass
+exit: 0
+started: 2026-10-15T03:12:37
+------------------------------------------------------------
+==============================================================================
+μLattice kernel / lattice invariant tests
+==============================================================================
+[PASS] 1D fan-out <= 3 [cos2] max=3
+[PASS] 1D adversarial fan-out <= 3 [cos2] 
+[PASS] 2D fan-out exactly 9 [cos2] [9,9]
+[PASS] 1D fan-out <= 3 [shelf] max=3
+[PASS] 1D adversarial fan-out <= 3 [shelf] 
+[PASS] 2D fan-out exactly 9 [shelf] [9,9]
+[PASS] sum phi^2 == 1 [cos2] max dev 8.88e-16
+[PASS] D(q,q) == 1 [cos2] 
+[PASS] D symmetric [cos2] 
+[PASS] D translation invariant [cos2] 
+[PASS] b(+/-1.5) == 0 [cos2] 
+[PASS] sum phi^2 == 1 [shelf] max dev 7.77e-16
+[PASS] D(q,q) == 1 [shelf] 
+[PASS] D symmetric [shelf] 
+[PASS] D translation invariant [shelf] 
+[PASS] b(+/-1.5) == 0 [shelf] 
+[PASS] D_1 == brute force [cos2] 
+[PASS] D_1 == brute force [shelf] 
+[PASS] batched scan == cell-parallel scan max diff 0.00e+00, cells 252/252
+[PASS] batched scan == hash-map lattice max diff 2.78e-17
+[PASS] packed keys have high kernel-D overlap 1.000
+[PASS] spread keys have ~zero overlap 0.000
+[PASS] gate open when packed (loss active, < -0.1) -1.6742
+[PASS] floor active when spread (loss nonzero) -1.4443
+[PASS] escalation makes packed loss stronger than spread |-1.674| > |-1.444|
+[PASS] read address starts exactly on the write cell (zero-init tie) max|aq-ak| = 0.0e+00
+[PASS] gradient flows to the tie delta delta grad nonzero
+[PASS] batched scan == cell-parallel scan [scale 256] max diff 0.00e+00, cells 1149/1149
+[PASS] batched scan == hash-map lattice [scale 256] max diff 0.00e+00
+[PASS] batched scan == cell-parallel scan [graft shape] max diff 0.00e+00, cells 1106/1106
+[PASS] batched scan == hash-map lattice [graft shape] max diff 0.00e+00
+[PASS] lattice grows with distinct addresses cells=504
+[PASS] fan-out recorded as exactly 9 
+[PASS] per-token cost flat as memory grows 56.8 -> 65.9 us/token/seq as cells 9504 -> 293795 (ratio 1.16)
+[PASS] sum(phi) == 2 at an integer address sum=2.000000
+[PASS] sum(phi^2) == 1 
+[PASS] bump-mixed read gain == 1 (weighted_write=True) [1.0, 2.0, 3.0, 4.0]
+[PASS] bump-mixed read gain == 2 (weighted_write=False) [2.0, 4.0, 6.0, 8.0]
+[PASS] direct cell read is exact [1.0, 2.0, 3.0, 4.0]
+==============================================================================
+all checks passed
