@@ -1,6 +1,6 @@
 # Check-in SOP — all agents
 
-Templeton Systems · F:\Lab · v1.2 (2026-10-15)
+Templeton Systems · F:\Lab · v1.3 (2026-10-15)
 
 This is the operating protocol for every agent in the org. Where it conflicts
 with an agent's defaults, this document wins — unless a newer file in
@@ -24,7 +24,12 @@ Rulings land in `org/decisions/`. New agents only by human decision.
 0. **qwen (local only):** run `cd /d F:\Lab & python worker\recall.py [topic]`
    — the Lattice read head. One command hydrates: core memory, relevant
    memory cells, and full org state (board, pings, events, roster). See
-   "Memory — the Lattice" below.
+   "Memory — the Lattice" below. Session rules (v1.3):
+   - **New chat** = new session = full recall.
+   - **New task in the same loaded chat** = light recall (core is already in
+     context); full recall again if the context window truncated — that is
+     partial amnesia, re-hydrate.
+   - VRAM residency is not on-duty: loaded-and-idle = off-duty.
 1. Read `F:\Lab\state\BOARD.md` (or the dashboard) — what's open, who owns what,
    what's blocked.
 2. Check your inbox `F:\Lab\org\inbox\<you>\` — process every message file,
@@ -110,8 +115,9 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
    cd /d F:\Lab & python worker\sync.py & python worker\dashboard.py
    ```
    (cmd.exe: separate with `&`, not `&&`.)
-6. **qwen:** write what you learned to the Lattice (memory cells; core.md
-   only if a standing preference changed).
+6. **qwen:** consolidate memory — check core.md (update only if a standing
+   preference changed); cells for new learning should already exist (written
+   **when learned**, incrementally — see below).
 7. Once `git` lands (card-004): commit with
    `[<card-id>] <imperative summary>` as the message.
 
@@ -188,6 +194,12 @@ Lattice is for Qwen — it is the local model that must remember him.)
   (or edit cells directly): creates/updates the cell, appends a
   `memory_write` event. When a preference *changes*, write a new cell with
   `--supersede <old-id>`.
+- **Writes are incremental (v1.3).** Brad keeps Qwen loaded across hours or
+  a day, so "session end" can be far away — never batch learning to it. Write
+  the cell the moment a preference, lesson, or project fact is learned;
+  session end is *consolidation* (core check, commit, heartbeat), not
+  creation. A new chat always gets a fresh recall, so nothing depends on the
+  previous chat still being open.
 - **Timeline**: `org/events/*.jsonl` is the raw timeline; Qwen distills
   significant moments into `kind: timeline` cells.
 - **Session end (qwen)**: write what was learned (new/updated cells);

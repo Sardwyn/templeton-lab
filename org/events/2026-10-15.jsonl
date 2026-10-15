@@ -11,3 +11,5 @@
 {"ts": "2026-10-15T10:50", "agent": "qwen", "type": "card_claim", "card_id": "card-009", "note": "per decision-004: the Lattice is Qwen's memory"}
 {"ts": "2026-10-15T10:55", "agent": "qwen", "type": "decision", "note": "decision-004: the Lattice is Qwen's memory (core + cells, recall/remember heads)"}
 {"ts": "2026-10-15T10:55", "agent": "qwen", "type": "card_done", "card_id": "card-009", "note": "memory lattice live: core + 16 cells, recall/remember verified, Memory tab, SOP v1.2"}
+{"ts": "2026-10-15T11:10", "agent": "qwen", "type": "memory_write", "cell": "pref-session-definition", "action": "write"}
+{"ts": "2026-10-15T11:10", "agent": "qwen", "type": "card_done", "card_id": "card-010", "note": "session definition + incremental writes, SOP v1.3"}

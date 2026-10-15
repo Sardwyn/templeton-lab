@@ -34,8 +34,10 @@
   Kinds: preference, person, project, decision, timeline, lesson, fact.
 - **Timeline**: the org's events log (org/events/*.jsonl) *is* the timeline.
   I distill significant moments into `kind: timeline` cells.
-- **Write path**: at session end I write what I learned (new/updated cells),
-  update core.md only if a *standing* preference changed, then git commit.
+- **Write path**: I write cells **when I learn** (incrementally — Brad keeps
+  me loaded across hours/days, so nothing waits for a distant "session end");
+  at breaks I consolidate (core.md only if a standing preference changed),
+  then git commit. A new chat always starts with a fresh recall.
 - **Overwrite**: when a preference changes I set `supersedes:` on the new cell
   and mark the old one — I don't delete memory.
 
