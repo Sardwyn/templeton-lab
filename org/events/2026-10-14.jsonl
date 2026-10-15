@@ -1,0 +1,21 @@
+{"ts":"2026-10-14T06:00","agent":"qwen","type":"card_create","card_id":"card-001"}
+{"ts":"2026-10-14T06:05","agent":"qwen","type":"card_done","card_id":"card-001"}
+{"ts":"2026-10-14T06:10","agent":"qwen","type":"card_create","card_id":"card-002"}
+{"ts":"2026-10-14T06:35","agent":"qwen","type":"card_done","card_id":"card-002"}
+{"ts":"2026-10-14T06:45","agent":"qwen","type":"card_create","card_id":"card-003"}
+{"ts":"2026-10-14T06:45","agent":"qwen","type":"card_create","card_id":"card-004"}
+{"ts":"2026-10-14T06:45","agent":"qwen","type":"card_create","card_id":"card-005"}
+{"ts":"2026-10-14T06:45","agent":"qwen","type":"card_create","card_id":"card-006"}
+{"ts":"2026-10-14T06:45","agent":"qwen","type":"identity_fix","note":"relabelled claude -> copilot (no claude agent in roster)"}
+{"ts":"2026-10-14T07:00","agent":"qwen","type":"identity_fix","note":"relabelled copilot -> qwen per CEO: qwen is the local agent; copilot is cloud"}
+{"ts":"2026-10-14T07:00","agent":"qwen","type":"card_claim","card_id":"card-003"}
+{"ts":"2026-10-14T07:01","agent":"qwen","type":"decision","note":"decision-001: roster, identity, HQ ruled by CEO"}
+{"ts":"2026-10-14T07:02","agent":"qwen","type":"card_done","card_id":"card-003"}
+{"ts":"2026-10-14T07:10","agent":"qwen","type":"decision","note":"decision-002: registered cursor, grokbot, opencode as cloud agents"}
+{"ts":"2026-10-14T07:25","agent":"qwen","type":"card_create","card_id":"card-007"}
+{"ts":"2026-10-14T07:25","agent":"qwen","type":"card_claim","card_id":"card-007"}
+{"ts":"2026-10-14T07:40","agent":"qwen","type":"message","note":"ping to brad: confirm cloud-agent scopes + green-light four org one-liners"}
+{"ts":"2026-10-14T08:00","agent":"qwen","type":"decision","note":"decision-003: cadences, cost gate, Copilot brief requirement"}
+{"ts":"2026-10-14T08:05","agent":"qwen","type":"card_done","card_id":"card-007"}
+{"ts":"2026-10-14T08:35","agent":"qwen","type":"card_create","card_id":"card-008"}
+{"ts":"2026-10-14T09:12","agent":"qwen","type":"identity_fix","note":"org addresses the human as Brad (CEO ruling); inbox human -> brad; pings now carry work links; card-008 queued (dashboard pages/drawers)"}

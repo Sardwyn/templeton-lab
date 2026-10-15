@@ -1,0 +1,7 @@
+# Generated artifacts — never commit
+state/
+dashboard/index.html
+transport/outbound/state.json
+transport/inbound/updates.json
+__pycache__/
+*.pyc

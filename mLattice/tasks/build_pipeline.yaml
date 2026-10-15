@@ -1,0 +1,13 @@
+id: build-pipeline
+description: "Run build pipeline for Scraplet / UE"
+inputs:
+  - repo_path
+  - build_target
+steps:
+  - id: run_build
+    type: shell
+    command: "python worker/run_build.py --target {{ build_target }}"
+  - id: record_build
+    type: python
+    module: "worker.apply"
+    function: "record_build_event"
