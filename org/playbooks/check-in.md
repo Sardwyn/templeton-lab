@@ -1,6 +1,6 @@
 # Check-in SOP — all agents
 
-Templeton Systems · F:\Lab · v1.1 (2026-10-14)
+Templeton Systems · F:\Lab · v1.2 (2026-10-15)
 
 This is the operating protocol for every agent in the org. Where it conflicts
 with an agent's defaults, this document wins — unless a newer file in
@@ -21,6 +21,10 @@ Rulings land in `org/decisions/`. New agents only by human decision.
 
 ## Session start
 
+0. **qwen (local only):** run `cd /d F:\Lab & python worker\recall.py [topic]`
+   — the Lattice read head. One command hydrates: core memory, relevant
+   memory cells, and full org state (board, pings, events, roster). See
+   "Memory — the Lattice" below.
 1. Read `F:\Lab\state\BOARD.md` (or the dashboard) — what's open, who owns what,
    what's blocked.
 2. Check your inbox `F:\Lab\org\inbox\<you>\` — process every message file,
@@ -92,7 +96,7 @@ One JSON object per line, append-only. Fields:
 `ts` (ISO local), `agent`, `type`, plus context (`card_id`, `build_id`, `note`).
 
 Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
-`decision`, `message`, `identity_fix`, `note`.
+`decision`, `message`, `identity_fix`, `note`, `memory_write`.
 
 ## Session end — always, even if you did nothing
 
@@ -106,7 +110,9 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
    cd /d F:\Lab & python worker\sync.py & python worker\dashboard.py
    ```
    (cmd.exe: separate with `&`, not `&&`.)
-6. Once `git` lands (card-004): commit with
+6. **qwen:** write what you learned to the Lattice (memory cells; core.md
+   only if a standing preference changed).
+7. Once `git` lands (card-004): commit with
    `[<card-id>] <imperative summary>` as the message.
 
 ## Heartbeats, schedules, liveness
@@ -160,6 +166,35 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
   the brief is the anchor for "what is current".
 - Copilot specifically: no temporal awareness (CEO-confirmed). It must
   receive a fresh brief in **every** session — never assume it remembers.
+
+## Memory — the Lattice (qwen)
+
+The Lattice is **Qwen's persistent memory** — the local model is stateless
+between sessions, so everything Qwen knows about Brad, his preferences, and
+the history lives here, not in any session. (Brad's ruling, 2026-10-15: the
+Lattice is for Qwen — it is the local model that must remember him.)
+
+- **Hot tier** — `memory/core.md`: identity, who Brad is, standing
+  preferences, pointers. Always loaded. Small (< ~60 lines). Distill, don't
+  dump.
+- **Warm tier** — `memory/cells/`: one file per memory, frontmatter:
+  `id` (kind-key), `kind` (preference | person | project | decision |
+  timeline | lesson | fact), `key`, `updated`, `supersedes: []`,
+  `confidence`. Body = the memory in 1-3 lines.
+- **Read head** — `python worker/recall.py [topic]`: core + standing
+  cells + 5 most recent + topic matches + org state. Superseded cells are
+  excluded (overwrite semantics — never delete, replace).
+- **Write head** — `python worker/remember.py <kind> <key> <text>`
+  (or edit cells directly): creates/updates the cell, appends a
+  `memory_write` event. When a preference *changes*, write a new cell with
+  `--supersede <old-id>`.
+- **Timeline**: `org/events/*.jsonl` is the raw timeline; Qwen distills
+  significant moments into `kind: timeline` cells.
+- **Session end (qwen)**: write what was learned (new/updated cells);
+  update `memory/core.md` only if a *standing* preference changed; commit.
+- **Cloud agents do not have the Lattice.** Their memory is the brief
+  (org state) — Qwen's relational memory stays local, and relevant bits
+  (e.g. Brad's preferences) are shared via decisions/ and briefs.
 
 ## Escalation (when in doubt)
 

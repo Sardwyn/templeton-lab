@@ -6,3 +6,8 @@
 {"ts": "2026-10-15T03:25", "agent": "qwen", "type": "card_done", "card_id": "card-006", "note": "CPU tests pass via pipeline; PAPER.md read; cross-link note org/notes/mulattice-llama-kv.md"}
 {"ts": "2026-10-15T03:30", "agent": "qwen", "type": "card_claim", "card_id": "card-008"}
 {"ts": "2026-10-15T03:55", "agent": "qwen", "type": "card_done", "card_id": "card-008", "note": "dashboard v2: tabs + drawers; serve.py auto-reload; verified live"}
+{"ts": "2026-10-15T10:37", "agent": "qwen", "type": "memory_write", "cell": "fact-shell-quoting", "action": "write"}
+{"ts": "2026-10-15T10:40", "agent": "qwen", "type": "memory_write", "cell": "fact-test-cell", "action": "write"}
+{"ts": "2026-10-15T10:50", "agent": "qwen", "type": "card_claim", "card_id": "card-009", "note": "per decision-004: the Lattice is Qwen's memory"}
+{"ts": "2026-10-15T10:55", "agent": "qwen", "type": "decision", "note": "decision-004: the Lattice is Qwen's memory (core + cells, recall/remember heads)"}
+{"ts": "2026-10-15T10:55", "agent": "qwen", "type": "card_done", "card_id": "card-009", "note": "memory lattice live: core + 16 cells, recall/remember verified, Memory tab, SOP v1.2"}

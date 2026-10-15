@@ -175,6 +175,27 @@ def load_decisions():
     return out
 
 
+def load_memory():
+    """Qwen's Lattice: core.md (hot tier) + cells/ (warm tier)."""
+    mem = {"core": None, "cells": []}
+    core = LAB / "memory" / "core.md"
+    if core.exists():
+        mem["core"] = {
+            "body": core.read_text(encoding="utf-8").strip(),
+            "path": "memory/core.md",
+        }
+    cdir = LAB / "memory" / "cells"
+    if cdir.exists():
+        for p in sorted(cdir.glob("*.md")):
+            fm, body = load_msg(p)
+            if fm is None:
+                continue
+            fm["_body"] = body
+            fm["_rel"] = p.relative_to(LAB).as_posix()
+            mem["cells"].append(fm)
+    return mem
+
+
 def heartbeat_age(hb):
     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
         try:
@@ -205,6 +226,7 @@ def build_page():
     pings = load_pings()
     inboxes = load_inboxes()
     decisions = load_decisions()
+    memory = load_memory()
 
     names = {a.get("id", "?"): (a.get("name") or a.get("id")) for a in agents}
 
@@ -224,6 +246,17 @@ def build_page():
         "inbox": {name: msgs for name, msgs in inboxes.items()},
         "decisions": {d["id"]: d for d in decisions},
     }
+    mem_art = {}
+    if memory.get("core"):
+        mem_art["core"] = {
+            "meta": {"id": "core", "tier": "hot — always loaded"},
+            "body": memory["core"]["body"],
+            "path": "memory/core.md",
+        }
+    for c in memory.get("cells", []):
+        mem_art[c.get("id", "?")] = {
+            "meta": pub_meta(c), "body": c["_body"], "path": c["_rel"]}
+    artifacts["memory"] = mem_art
     artifacts_json = json.dumps(artifacts).replace("</", "<\\/")
 
     # ---- Board tab ----
@@ -352,6 +385,21 @@ def build_page():
                esc(e.get("card_id", "") or e.get("build_id", "") or e.get("note", "")))
         )
 
+    mem_rows = []
+    if memory.get("core"):
+        mem_rows.append(
+            "<tr class='clickable' data-kind='memory' data-id='core'>"
+            "<td>core.md</td><td>core</td><td>\u2014</td><td>always</td>"
+            "<td>hot tier \u2014 identity, Brad, standing preferences</td></tr>")
+    for c in memory.get("cells", []):
+        firstline = (c.get("_body", "").splitlines() or [""])[0].strip()[:60]
+        mem_rows.append(
+            "<tr class='clickable' data-kind='memory' data-id='%s'><td>%s</td>"
+            "<td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+            % (esc(c.get("id", "?")), esc(c.get("id", "?")),
+               esc(c.get("kind", "?")), esc(c.get("key", "?")),
+               esc(c.get("updated", "?")), esc(firstline)))
+
     ts = now.strftime("%Y-%m-%d %H:%M:%S")
     html = HTML_TEMPLATE % {
         "ts": ts,
@@ -361,6 +409,7 @@ def build_page():
         "agents": "\n".join(agent_rows) or "<tr><td colspan='7'>no agent files yet</td></tr>",
         "inboxes": "\n".join(inbox_rows) or "<tr><td colspan='2'>none</td></tr>",
         "decisions": "\n".join(decision_rows) or "<tr><td colspan='4'>no decisions yet</td></tr>",
+        "memory": "\n".join(mem_rows) or "<tr><td colspan='5'>no memory yet</td></tr>",
         "builds": "\n".join(build_rows) or "<tr><td colspan='5'>no builds recorded yet</td></tr>",
         "events": "\n".join(event_rows) or "<tr><td colspan='4'>no events yet</td></tr>",
     }
@@ -480,12 +529,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
 <h1>Templeton Systems <span style="color:var(--dim);font-weight:400">— Org Dashboard</span></h1>
-<div class="sub">generated %(ts)s &nbsp;·&nbsp; F:\\Lab &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a></div>
+<div class="sub">generated %(ts)s &nbsp;·&nbsp; F:\\Lab &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#memory">Memory</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a></div>
 
 <nav class="tabs">
   <a href="#board" class="tab" data-tab="board">Board</a>
   <a href="#pings" class="tab" data-tab="pings">Pings</a>
   <a href="#roster" class="tab" data-tab="roster">Roster</a>
+  <a href="#memory" class="tab" data-tab="memory">Memory</a>
   <a href="#builds" class="tab" data-tab="builds">Builds</a>
   <a href="#events" class="tab" data-tab="events">Events</a>
 </nav>
@@ -520,6 +570,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <table>
 <tr><th>ID</th><th>Date</th><th>Status</th><th>Title</th></tr>
 %(decisions)s
+</table>
+</section>
+
+<section class="pane" data-pane="memory">
+<h2>Qwen's Memory — the Lattice</h2>
+<p class="sub">hot tier + warm cells — click to open · recall: python worker\recall.py · write: python worker\remember.py</p>
+<table>
+<tr><th>Cell</th><th>Kind</th><th>Key</th><th>Updated</th><th>First line</th></tr>
+%(memory)s
 </table>
 </section>
 
@@ -655,6 +714,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     else if (kind === 'decision') openArt('decisions', id, id);
     else if (kind === 'ping') openMsg(id);
     else if (kind === 'inbox') openInbox(id);
+    else if (kind === 'memory') openArt('memory', id, id);
   });
 })();
 </script>
