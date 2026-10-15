@@ -1,3 +1,4 @@
+import importlib
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
@@ -10,11 +11,19 @@ import dashboard  # noqa: E402  (same folder)
 PORT = 8901
 
 
+def fresh_dashboard():
+    """Re-run dashboard.py on every request so generator edits are picked
+    up without restarting the server (module is stateless)."""
+    importlib.reload(sys.modules["dashboard"])
+    return sys.modules["dashboard"]
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
+            dash = fresh_dashboard()
             try:
-                dashboard.build_page()
+                dash.build_page()
             except Exception as e:
                 self.send_response(500)
                 self.end_headers()

@@ -4,3 +4,5 @@
 {"ts": "2026-10-15T03:25", "agent": "qwen", "type": "card_done", "card_id": "card-004", "note": "git init F:\\Lab, .gitignore, initial commit 1ea72ff (35 files)"}
 {"ts": "2026-10-15T03:25", "agent": "qwen", "type": "card_done", "card_id": "card-005", "note": "lattice runner + run_build + apply live; 3 builds recorded (1 fail, 2 pass)"}
 {"ts": "2026-10-15T03:25", "agent": "qwen", "type": "card_done", "card_id": "card-006", "note": "CPU tests pass via pipeline; PAPER.md read; cross-link note org/notes/mulattice-llama-kv.md"}
+{"ts": "2026-10-15T03:30", "agent": "qwen", "type": "card_claim", "card_id": "card-008"}
+{"ts": "2026-10-15T03:55", "agent": "qwen", "type": "card_done", "card_id": "card-008", "note": "dashboard v2: tabs + drawers; serve.py auto-reload; verified live"}

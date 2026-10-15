@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-14T09:12
-focus: "org ops: brad entry, ping links, dashboard v2 queue"
+last_heartbeat: 2026-10-15T03:55
+focus: "dashboard v2 live; board clear"
 ---
 
 ## Charter
