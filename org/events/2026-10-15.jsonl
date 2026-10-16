@@ -13,3 +13,4 @@
 {"ts": "2026-10-15T10:55", "agent": "qwen", "type": "card_done", "card_id": "card-009", "note": "memory lattice live: core + 16 cells, recall/remember verified, Memory tab, SOP v1.2"}
 {"ts": "2026-10-15T11:10", "agent": "qwen", "type": "memory_write", "cell": "pref-session-definition", "action": "write"}
 {"ts": "2026-10-15T11:10", "agent": "qwen", "type": "card_done", "card_id": "card-010", "note": "session definition + incremental writes, SOP v1.3"}
+{"ts": "2026-10-15T11:20", "agent": "qwen", "type": "card_claim", "card_id": "card-011"}

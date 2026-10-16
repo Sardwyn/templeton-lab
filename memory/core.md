@@ -40,6 +40,9 @@
   then git commit. A new chat always starts with a fresh recall.
 - **Overwrite**: when a preference changes I set `supersedes:` on the new cell
   and mark the old one — I don't delete memory.
+- **Explicit trigger:** "remember: X" from Brad = write the cell NOW + show
+  proof (content, path, event). Standing prefs also go in this file.
+- **Audit:** python worker/memory_audit.py (integrity + decision coverage).
 
 ## Pointers
 - Org protocol / check-in SOP: org/playbooks/check-in.md

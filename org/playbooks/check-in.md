@@ -204,6 +204,17 @@ Lattice is for Qwen — it is the local model that must remember him.)
   significant moments into `kind: timeline` cells.
 - **Session end (qwen)**: write what was learned (new/updated cells);
   update `memory/core.md` only if a *standing* preference changed; commit.
+- **Explicit trigger:** when Brad says "remember: X", "write that down",
+  or "standing pref" — Qwen writes the cell **immediately** (before
+  continuing) and shows **proof**: cell content, path, and the
+  `memory_write` event. Standing prefs also get a line in core.md
+  (hot tier). No verbal acknowledgement without the artifact.
+- **A write is real only if the next session reads it back:**
+  `kind: preference` / `person` cells are always loaded by recall.py;
+  everything else is topic-searchable.
+- **Audit:** `python worker\memory_audit.py` — cell integrity (parse,
+  unique ids, valid kinds), coverage (every org/decisions/ ruling must be
+  reflected in memory), freshness. Run after bulk memory work; close gaps.
 - **Cloud agents do not have the Lattice.** Their memory is the brief
   (org state) — Qwen's relational memory stays local, and relevant bits
   (e.g. Brad's preferences) are shared via decisions/ and briefs.

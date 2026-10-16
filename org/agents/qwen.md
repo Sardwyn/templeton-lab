@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-15T11:10
-focus: "memory protocol v1.3 (incremental writes); board clear"
+last_heartbeat: 2026-10-16T02:57
+focus: "memory guarantees live (audit + trigger + proof); board clear"
 ---
 
 ## Charter
