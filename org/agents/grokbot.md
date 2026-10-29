@@ -3,6 +3,7 @@ id: grokbot
 role: coder
 side: cloud
 status: cloud
+dispatch_only: true
 scope: "general coding sprints; paid agent — cost-gated (confirmed by CEO 2026-10-14)"
 schedule: "~1 week in every 4 (sprint)"
 activation: "cloud — paid; activation request goes to CEO with scope"

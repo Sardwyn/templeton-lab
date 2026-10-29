@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-16T02:57
-focus: "memory guarantees live (audit + trigger + proof); board clear"
+last_heartbeat: 2026-10-29T02:29
+focus: "card-012 done (single-writer reality); card-013 parked until a real dispatch returns"
 ---
 
 ## Charter
@@ -24,4 +24,6 @@ focus: "memory guarantees live (audit + trigger + proof); board clear"
   (Brad's ruling, 2026-10-15).
 - **Pings:** ping the CEO inbox for anything spending, deleting, or leaving
   the box. Ping Copilot (via CEO) for architecture conflicts.
-- **Checks in:** direct filesystem — session start/end per SOP.
+- **Checks in:** direct filesystem — session start/end per SOP. Sole
+  direct-check-in agent (decision-005): the org is single-writer until the
+  VRAM picture changes; cloud agents are dispatch-only.

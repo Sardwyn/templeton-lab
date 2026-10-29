@@ -1,0 +1,12 @@
+{"ts": "2026-10-29T02:26", "agent": "qwen", "type": "memory_write", "cell": "fact-vram-single-writer.md", "note": "VRAM constraint: qwen only local agent"}
+{"ts": "2026-10-29T02:26", "agent": "qwen", "type": "memory_write", "cell": "decision-005.md", "note": "single-writer + dispatch-only + least-frictionless ruled"}
+{"ts": "2026-10-29T02:26", "agent": "qwen", "type": "card_create", "card": "card-012", "title": "Single-writer reality - dispatch-only roster + check-in freshness"}
+{"ts": "2026-10-29T02:26", "agent": "qwen", "type": "card_claim", "card": "card-012"}
+{"ts": "2026-10-29T02:26", "agent": "qwen", "type": "card_create", "card": "card-013", "title": "Inbound reply parser (bus role) - parked until traffic"}
+{"ts": "2026-10-29T02:26", "agent": "qwen", "type": "decision", "decision": "decision-005", "file": "org/decisions/2026-10-29-single-writer-dispatch.md", "note": "Brad: single-writer org; cloud dispatch-only; least frictionless"}
+{"ts": "2026-10-29T02:26", "agent": "qwen", "type": "note", "note": "SOP v1.4: dispatch-only cloud agents + freshness step at check-in"}
+{"ts": "2026-10-29T02:29", "agent": "qwen", "type": "memory_write", "cell": "lesson-derived-views-and-inbound-stub.md", "note": "derived views are not sources; apply_inbound() discards updates.json"}
+{"ts": "2026-10-29T02:29", "agent": "qwen", "type": "card_done", "card": "card-012", "note": "SOP v1.4 + dispatch_only flags + freshness step; views regenerated"}
+{"ts": "2026-10-29T02:29", "agent": "qwen", "type": "build", "note": "sync.py passes dispatch_only through; dashboard shows dispatch-only instead of stale heartbeat"}
+{"ts": "2026-10-29T02:31", "agent": "qwen", "type": "note", "note": "correction: the earlier 'build' event type was logged in error - card-012 was a docs/state change with no build or test run; canonical types are build_pass/build_fail via apply.record_build_event()"}
+{"ts": "2026-10-29T02:31", "agent": "qwen", "type": "note", "note": "check-out: heartbeat 2026-10-29T02:29 (was stale 13 days at 2026-10-16T02:57); sync + dashboard + brief regenerated"}

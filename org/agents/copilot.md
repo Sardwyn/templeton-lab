@@ -3,6 +3,7 @@ id: copilot
 role: architect
 side: cloud
 status: cloud
+dispatch_only: true
 scope: "high-level architecture, org design, planning, review of qwen's work"
 schedule: "on demand — high-level and architectural work"
 activation: "cloud chat — no extra cost; session is stateless"

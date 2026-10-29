@@ -1,6 +1,10 @@
 # Check-in SOP — all agents
 
-Templeton Systems · F:\Lab · v1.3 (2026-10-15)
+Templeton Systems · F:\Lab · v1.4 (2026-10-29)
+
+v1.4 (decision-005): single-writer org — qwen is the sole direct-check-in
+agent; cloud agents are dispatch-only (no heartbeats); generated views
+(board/outbound/brief/dashboard) regenerate at every check-in.
 
 This is the operating protocol for every agent in the org. Where it conflicts
 with an agent's defaults, this document wins — unless a newer file in
@@ -110,9 +114,10 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
 2. Record every build you ran.
 3. Drop messages for other agents (their inboxes, your own inbox is yours).
 4. Append events for everything notable.
-5. Regenerate the board:
+5. Regenerate the derived views — they are never sources of truth
+   (decision-005):
    ```
-   cd /d F:\Lab & python worker\sync.py & python worker\dashboard.py
+   cd /d F:\Lab & python worker\sync.py & python worker\dashboard.py & python worker\brief.py
    ```
    (cmd.exe: separate with `&`, not `&&`.)
 6. **qwen:** consolidate memory — check core.md (update only if a standing
@@ -133,9 +138,9 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
 - The dashboard renders each agent's schedule, the age of their last
   heartbeat, and flags **STALE** when a `on-duty` agent's heartbeat is
   older than 24h.
-- **Cloud agents check in via transport**: they emit updates (agent-file
-  fields, card moves, inbox notes, event lines) and qwen — or the CEO —
-  lands them as files + events. Cloud heartbeats land the same way.
+- **Cloud agents are dispatch-only (v1.4, decision-005).** They do not
+  heartbeat and no one flags them stale; a dispatch runs with a fresh brief
+  and its result, if any, lands as files + events at qwen's next check-in.
 - **Standup (v1, when the org is active)**: one small file per agent per
   day at `org/standup/<YYYY-MM-DD>/<agent>.md` — did / next / blocked.
 

@@ -3,6 +3,7 @@ id: cursor
 role: coder
 side: cloud
 status: cloud
+dispatch_only: true
 scope: "Unreal Engine big-project work (baebattles, Kimodo/retargeting pipeline); paid agent — cost-gated (confirmed by CEO 2026-10-14)"
 schedule: "~weekly — big UE project work"
 activation: "cloud, via IDE — paid; activation request goes to CEO with scope"

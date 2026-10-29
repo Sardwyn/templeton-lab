@@ -3,6 +3,7 @@ id: opencode
 role: coder
 side: cloud
 status: cloud
+dispatch_only: true
 scope: "general coding; paid agent — cost-gated (confirmed by CEO 2026-10-14)"
 schedule: "~2 weeks in every 4"
 activation: "cloud — paid; activation request goes to CEO with scope"

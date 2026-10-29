@@ -327,8 +327,12 @@ def build_page():
             return "\u2014" if v in ("", "null") else v
 
         hb_raw = clean("last_heartbeat")
+        dispatch_only = str(a.get("dispatch_only", "")).lower() in ("true", "yes", "1")
         age = heartbeat_age(hb_raw) if hb_raw != "\u2014" else None
-        if age is None:
+        if dispatch_only:
+            hb_disp = "dispatch-only"
+            stale = ""
+        elif age is None:
             hb_disp = "\u2014"
             stale = ""
         else:

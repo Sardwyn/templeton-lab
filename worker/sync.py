@@ -37,6 +37,7 @@ def build_outbound():
                     "role": f.get("role", ""),
                     "status": f.get("status", ""),
                     "focus": f.get("focus", ""),
+                    "dispatch_only": f.get("dispatch_only", ""),
                 }
     outbound = {"cards": cards, "inbox": {}, "agents": agents}
     (TRANSPORT / "outbound").mkdir(parents=True, exist_ok=True)
