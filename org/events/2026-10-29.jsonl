@@ -10,3 +10,18 @@
 {"ts": "2026-10-29T02:29", "agent": "qwen", "type": "build", "note": "sync.py passes dispatch_only through; dashboard shows dispatch-only instead of stale heartbeat"}
 {"ts": "2026-10-29T02:31", "agent": "qwen", "type": "note", "note": "correction: the earlier 'build' event type was logged in error - card-012 was a docs/state change with no build or test run; canonical types are build_pass/build_fail via apply.record_build_event()"}
 {"ts": "2026-10-29T02:31", "agent": "qwen", "type": "note", "note": "check-out: heartbeat 2026-10-29T02:29 (was stale 13 days at 2026-10-16T02:57); sync + dashboard + brief regenerated"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "decision", "decision": "decision-006", "file": "org/decisions/2026-10-29-github-hosting.md", "note": "Brad: GitHub; two independent public repos; qwen is the carrier"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "note", "note": "gh CLI 2.103.3 installed via winget at Brad's approval; gh auth reuses the OAuth token Git Credential Manager already held for Sardwyn@github.com, so no device flow and nothing pasted"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "card_create", "card": "card-014", "title": "GitHub hosting - remotes for HQ and swarm, push both"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "card_claim", "card": "card-014"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "repo_create", "repo": "Sardwyn/templeton-lab", "visibility": "public", "note": "gh repo create; landed by qwen"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "repo_create", "repo": "Sardwyn/swarm-playpen", "visibility": "public", "note": "swarm's existing independent history pushed as-is; landed by qwen"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "push", "repo": "Sardwyn/templeton-lab", "branch": "main", "note": "HQ branch renamed master->main (branch rename, not a history rewrite); landed by qwen"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "push", "repo": "Sardwyn/swarm-playpen", "branch": "main", "commit": "29d7179", "note": "swarm history only - the uncommitted WIP is not pushed yet; landed by qwen"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "note", "note": "HQ .gitignore now excludes swarm/ per decision-006: swarm is a sibling repo, never a subtree of HQ"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "note", "note": "SOP v1.5: event vocabulary extended with repo_create and push so push provenance is machine-readable (decision-006). Earlier types unchanged; card-013's inbound parser still parked"}
+{"ts": "2026-10-29T03:18", "agent": "qwen", "type": "memory_write", "cell": "decision-006.md", "note": "GitHub ruling: two public independent repos, qwen as carrier"}
+{"ts": "2026-10-29T03:33", "agent": "qwen", "type": "build_fail", "build_id": "build-20261029-001", "target": "swarm: npx vitest run (24 files, 474 tests)"}
+{"ts": "2026-10-29T03:33", "agent": "qwen", "type": "push", "repo": "Sardwyn/swarm-playpen", "branch": "main", "commit": "22cc654", "note": "Brad's yacht-director WIP committed under his identity with the red tests stated in the message; landed by qwen"}
+{"ts": "2026-10-29T03:33", "agent": "qwen", "type": "memory_write", "cell": "fact-github-hosting.md", "note": "both repos public + remotes + gh auth mechanics (decision-006)"}
+{"ts": "2026-10-29T03:33", "agent": "qwen", "type": "card_done", "card": "card-014", "note": "both repos live on GitHub; open finding handed to Brad: 3 director contract tests red under the WIP"}

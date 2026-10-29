@@ -46,6 +46,9 @@
 
 ## Pointers
 - Org protocol / check-in SOP: org/playbooks/check-in.md
+- GitHub: HQ = Sardwyn/templeton-lab, swarm = Sardwyn/swarm-playpen, both
+  public, `main`; I am the carrier (decision-006). `gh` works off the stored
+  Git Credential Manager token — no login ceremony.
 - Cloud-agent onboarding one-liners: org/playbooks/one-liners.md
 - Decisions (Brad's rulings): org/decisions/
 - Research cross-link (muLattice x llama.cpp): org/notes/mulattice-llama-kv.md

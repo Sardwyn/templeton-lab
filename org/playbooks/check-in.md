@@ -1,6 +1,11 @@
 # Check-in SOP — all agents
 
-Templeton Systems · F:\Lab · v1.4 (2026-10-29)
+Templeton Systems · F:\Lab · v1.5 (2026-10-29)
+
+v1.5 (decision-006): the org is hosted on GitHub. Two independent repos —
+HQ and `swarm/` — both public, qwen is the carrier who lands and pushes.
+Every push is logged with `repo` and `branch` context and `note: landed by
+qwen`. `swarm/` is gitignored by HQ; never commit it into the HQ tree.
 
 v1.4 (decision-005): single-writer org — qwen is the sole direct-check-in
 agent; cloud agents are dispatch-only (no heartbeats); generated views

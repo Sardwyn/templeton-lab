@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-29T02:29
-focus: "card-012 done (single-writer reality); card-013 parked until a real dispatch returns"
+last_heartbeat: 2026-10-29T03:35
+focus: "card-014 done (GitHub hosting: both repos public and pushed); open finding — swarm director WIP red tests are Brad's"
 ---
 
 ## Charter
