@@ -3,6 +3,7 @@ id: card-011
 title: Memory write guarantees — explicit trigger, proof, audit
 column: done
 assignee: qwen
+project: ue-baebattles
 depends_on: ["card-010"]
 created_at: 2026-10-15T11:20
 updated_at: 2026-10-16T02:57

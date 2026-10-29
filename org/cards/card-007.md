@@ -3,6 +3,7 @@ id: card-007
 title: Agent entries (scope/role/schedule) + ping/activation protocol
 column: done
 assignee: qwen
+project: mulattice
 depends_on: ["card-003"]
 created_at: 2026-10-14T07:25
 updated_at: 2026-10-14T08:05

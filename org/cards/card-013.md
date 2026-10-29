@@ -3,6 +3,7 @@ id: card-013
 title: Inbound reply parser — land a cloud org-update block (bus role)
 column: backlog
 assignee: unassigned
+project: templeton-lab
 depends_on: ["card-012"]
 created_at: 2026-10-29T02:30
 updated_at: 2026-10-29T02:30

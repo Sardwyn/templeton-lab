@@ -1,6 +1,13 @@
 # Check-in SOP — all agents
 
-Templeton Systems · F:\Lab · v1.5 (2026-10-29)
+Templeton Systems · F:\Lab · v1.6 (2026-10-29)
+
+v1.6 (decision-007): projects are first-class artifacts. `org/projects/<id>.md`
+is the source for what a project is; **every card and build carries `project:`**,
+and `state/PROJECTS.md` is a generated view regenerated at every check-in. A
+project's memory cell is named explicitly (`memory_cell:`), never guessed by
+keyword. Events stay unchanged — their `card` / `build_id` / `cell` / `repo`
+refs resolve to a project. No new event types.
 
 v1.5 (decision-006): the org is hosted on GitHub. Two independent repos —
 HQ and `swarm/` — both public, qwen is the carrier who lands and pushes.
@@ -40,7 +47,8 @@ Rulings land in `org/decisions/`. New agents only by human decision.
      partial amnesia, re-hydrate.
    - VRAM residency is not on-duty: loaded-and-idle = off-duty.
 1. Read `F:\Lab\state\BOARD.md` (or the dashboard) — what's open, who owns what,
-   what's blocked.
+   what's blocked. For project-scoped work read `state\PROJECTS.md`, or the
+   source itself at `org/projects/<id>.md`.
 2. Check your inbox `F:\Lab\org\inbox\<you>\` — process every message file,
    then delete it (processed) or move it to `org/inbox/<you>/done/`.
 3. Skim the newest files in `org/playbooks/` and `org/decisions/` for changes.
@@ -59,7 +67,12 @@ Rulings land in `org/decisions/`. New agents only by human decision.
   might touch the same thing, split into files.
 - **Cards:** frontmatter is the API. `column:` is one of
   `backlog | in-progress | review | done | blocked`. Cards move by editing
-  their own file. IDs are permanent — never rename, never reuse.
+  their own file. IDs are permanent — never rename, never reuse. Every new
+  card carries `project:` — the id of a project in `org/projects/`.
+- **Projects:** `org/projects/<id>.md` is the source for a project's prose and
+  status; its memory cell is named by `memory_cell:`, not by keyword search
+  (decision-007). Update the project artifact when a project moves forward —
+  that is where "where we're at" lives. `state/PROJECTS.md` is generated.
 - **Blocked:** set `column: blocked`, put a note in `org/inbox/human/` saying
   exactly what decision is needed, then keep working other cards.
 - **Builds:** run through `mLattice/tasks/` pipelines where one exists;
@@ -77,6 +90,7 @@ One file per build run, named `<id>.md`:
 ---
 id: build-YYYYMMDD-NNN        # NNN = that day's build number, 001-based
 target: <repo or project>
+project: <project id>         # required (decision-007); via apply.record_build_event(project=...)
 agent: <you>
 status: pass | fail
 ts: <ISO 8601 local>
@@ -107,7 +121,11 @@ Body. Keep it actionable: state, decision needed, link/path to details.
 ## Event log (`org/events/<YYYY-MM-DD>.jsonl`)
 
 One JSON object per line, append-only. Fields:
-`ts` (ISO local), `agent`, `type`, plus context (`card_id`, `build_id`, `note`).
+`ts` (ISO local), `agent`, `type`, plus context (`card` or `card_id`,
+`build_id`, `cell`, `repo`, `file`, `note`). Events stay unchanged even after
+decision-007: a project page finds its events by resolving those refs to a
+project through the card/build/cell that carries `project:` — so there is no
+`project_event` type and no rewriting of old lines.
 
 Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
 `decision`, `message`, `identity_fix`, `note`, `memory_write`.
@@ -120,7 +138,9 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
 3. Drop messages for other agents (their inboxes, your own inbox is yours).
 4. Append events for everything notable.
 5. Regenerate the derived views — they are never sources of truth
-   (decision-005):
+   (decision-005). `worker\sync.py` writes RECALL/outbound, `worker\dashboard.py`
+   writes `dashboard/index.html` + `state/BOARD.md` + `state/PROJECTS.md`,
+   `worker\brief.py` writes the cloud brief:
    ```
    cd /d F:\Lab & python worker\sync.py & python worker\dashboard.py & python worker\brief.py
    ```
@@ -128,8 +148,9 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
 6. **qwen:** consolidate memory — check core.md (update only if a standing
    preference changed); cells for new learning should already exist (written
    **when learned**, incrementally — see below).
-7. Once `git` lands (card-004): commit with
-   `[<card-id>] <imperative summary>` as the message.
+7. Commit with `[<card-id>] <imperative summary>` as the message. **qwen is the
+   carrier** (decision-006): commit in HQ, push HQ; commit and push `swarm/`
+   separately — never a subtree of HQ. Cloud agents do not push.
 
 ## Heartbeats, schedules, liveness
 

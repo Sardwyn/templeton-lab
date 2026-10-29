@@ -3,6 +3,7 @@ id: card-010
 title: Session definition + incremental memory writes
 column: done
 assignee: qwen
+project: adaptive-kv
 depends_on: ["card-009"]
 created_at: 2026-10-15T11:05
 updated_at: 2026-10-15T11:10

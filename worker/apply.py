@@ -44,7 +44,7 @@ def _next_build_id(date_str):
 
 def record_build_event(target=None, agent="qwen", status=None,
                        exit_code=None, log_text="", log_file=None,
-                       notes=""):
+                       notes="", project=None):
     """Record one build. Returns the build file path, or None if called
     as a no-op echo (no target and no status given — e.g. the scaffold
     record_build step running without context)."""
@@ -76,6 +76,8 @@ def record_build_event(target=None, agent="qwen", status=None,
         f.write("id: %s\n" % build_id)
         f.write("target: %s\n" % (target or "?"))
         f.write("agent: %s\n" % agent)
+        if project:
+            f.write("project: %s\n" % project)
         f.write("status: %s\n" % status)
         f.write("ts: %s\n" % ts)
         f.write("---\n\n")
@@ -83,5 +85,5 @@ def record_build_event(target=None, agent="qwen", status=None,
         f.write("\n")
 
     append_event(agent, "build_pass" if status == "pass" else "build_fail",
-                 build_id=build_id, target=target)
+                 build_id=build_id, target=target, project=project)
     return str(path)

@@ -3,6 +3,7 @@ id: card-005
 title: worker/lattice.py — YAML task-graph runner
 column: done
 assignee: qwen
+project: mulattice
 depends_on: ["card-002"]
 created_at: 2026-10-14T06:45
 updated_at: 2026-10-15T03:15

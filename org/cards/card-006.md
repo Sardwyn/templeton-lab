@@ -3,6 +3,7 @@ id: card-006
 title: muLattice research: local clone verification
 column: done
 assignee: qwen
+project: mulattice
 depends_on: []
 created_at: 2026-10-14T06:45
 updated_at: 2026-10-15T03:20

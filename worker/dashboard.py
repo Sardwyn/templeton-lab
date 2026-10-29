@@ -4,9 +4,11 @@ Generates F:\\Lab\\dashboard\\index.html — self-contained (no external deps,
 works from file:// or via worker/serve.py). Also writes the plain-text
 board to F:\\Lab\\state\\BOARD.md for tools that read markdown.
 
-Tabs (hash-routed): board | pings | roster | builds | events
-Drawers: click any card / ping / build / agent / inbox / decision to open
-the full artifact. Artifact bodies are embedded as JSON in the page.
+Tabs (hash-routed): board | projects | pings | roster | builds | events
+Projects: `#proj/<id>` opens a per-project page — cards, builds, decisions
+(by mention), the project's memory cell, and events scoped by ctx refs.
+Drawers: click any card / ping / build / agent / inbox / decision / project to
+open the full artifact. Artifact bodies are embedded as JSON in the page.
 """
 import datetime
 import json
@@ -21,6 +23,7 @@ DASHBOARD = LAB / "dashboard"
 
 COLUMNS = ["backlog", "in-progress", "review", "done", "blocked"]
 KNOWN_COLUMNS = set(COLUMNS)
+COLUMN_RANK = {name: i for i, name in enumerate(COLUMNS)}
 
 
 # ---------- loading ----------
@@ -72,6 +75,8 @@ def pub_meta(d):
 
 
 def load_events(limit=20):
+    """Whole log, newest first; limit=None means no cap (project scoping
+    needs every event, the Events tab stays capped)."""
     ev_dir = ORG / "events"
     events = []
     if ev_dir.exists():
@@ -85,7 +90,7 @@ def load_events(limit=20):
                 except json.JSONDecodeError:
                     continue
     events.sort(key=lambda e: e.get("ts", ""), reverse=True)
-    return events[:limit]
+    return events[:limit] if limit else events
 
 
 def inbox_counts():
@@ -196,6 +201,90 @@ def load_memory():
     return mem
 
 
+def load_projects():
+    """org/projects/<id>.md — the org's project artifacts."""
+    return load_md_with_body(ORG / "projects")
+
+
+def project_scopes(projects, cards, builds):
+    """Returns project_of(event). Scope by explicit ctx field first, then by
+    the card/build/memory-cell/repo the event names; None = not scoped."""
+    ids = set()
+    by_cell = {}
+    by_repo = {}
+    for p in projects:
+        pid = p.get("id")
+        ids.add(pid)
+        cell = (p.get("memory_cell") or "").strip().replace("\\", "/")
+        if cell:
+            stem = cell.split("/")[-1].replace(".md", "")
+            by_cell[stem] = pid
+            by_cell[cell] = pid
+        repo = (p.get("repo") or "").strip()
+        if repo:
+            by_repo[repo.rstrip("/").split("/")[-1]] = pid
+    by_card = {c.get("id"): c.get("project") for c in cards if c.get("project")}
+    by_build = {b.get("id"): b.get("project") for b in builds if b.get("project")}
+
+    def project_of(e):
+        explicit = e.get("project")
+        if explicit and explicit in ids:
+            return explicit
+        # older events used `card_id`, newer ones `card` — both are card refs
+        for key, index in (("card", by_card), ("card_id", by_card),
+                           ("build_id", by_build), ("build", by_build)):
+            ref = e.get(key)
+            if ref and index.get(ref):
+                return index[ref]
+        cell = e.get("cell")
+        if cell and by_cell.get(cell.replace(".md", "")):
+            return by_cell[cell.replace(".md", "")]
+        repo = e.get("repo")
+        if repo and by_repo.get(repo.rstrip("/").split("/")[-1]):
+            return by_repo[repo.rstrip("/").split("/")[-1]]
+        # a `file` ref naming an artifact inside a project's own tree
+        file = e.get("file")
+        if file:
+            file = str(file).replace("\\", "/")
+            base = file.split("/")[-1].replace(".md", "")
+            if file.startswith("org/cards/") and by_card.get(base):
+                return by_card[base]
+            if file.startswith("org/builds/") and by_build.get(base):
+                return by_build[base]
+            if file.startswith("org/projects/") and base in ids:
+                return base
+            if file.startswith("memory/cells/") and by_cell.get(base):
+                return by_cell[base]
+        return None
+
+    return project_of
+
+
+def mentions_project(doc, pid):
+    """Decisions carry no project field, so this is by token mention only —
+    the dashboard labels it as 'by mention' instead of pretending precision."""
+    tokens = [t for t in pid.split("-") if len(t) >= 4]
+    hay = ("%s %s" % (doc.get("id", ""),
+                      doc.get("body", "") or doc.get("_body", ""))).lower()
+    return any(t in hay for t in tokens)
+
+
+def build_streak(builds):
+    """Newest-first builds -> (kind, count) of the current pass/fail streak."""
+    kind = None
+    n = 0
+    for b in builds:
+        st = (b.get("status") or "").lower()
+        if st not in ("pass", "fail"):
+            continue
+        if kind is None:
+            kind = st
+        if st != kind:
+            break
+        n += 1
+    return kind, n
+
+
 def heartbeat_age(hb):
     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
         try:
@@ -210,6 +299,27 @@ def heartbeat_age(hb):
 def esc(s):
     return (str(s).replace("&", "&amp;").replace("<", "&lt;")
             .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def event_ref(e):
+    """Whatever an event points at — card, build, note, decision, cell, repo."""
+    for key in ("card", "card_id", "build_id", "build", "note", "decision",
+                "cell", "repo", "message"):
+        if e.get(key):
+            return str(e[key])
+    return ""
+
+
+def md_lite(text):
+    """Minimal markdown for our prose artifacts: paragraphs, **bold**, `code`."""
+    parts = []
+    for para in re.split(r"\n\s*\n", (text or "").strip()):
+        p = esc(para.strip()).replace("\n", " ")
+        p = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", p)
+        p = re.sub(r"`([^`]+)`", r"<code>\1</code>", p)
+        if p:
+            parts.append("<p>%s</p>" % p)
+    return "".join(parts)
 
 
 def build_page():
@@ -227,6 +337,9 @@ def build_page():
     inboxes = load_inboxes()
     decisions = load_decisions()
     memory = load_memory()
+    projects = load_projects()
+    all_events = load_events(limit=None)
+    project_of = project_scopes(projects, cards, builds)
 
     names = {a.get("id", "?"): (a.get("name") or a.get("id")) for a in agents}
 
@@ -257,6 +370,9 @@ def build_page():
         mem_art[c.get("id", "?")] = {
             "meta": pub_meta(c), "body": c["_body"], "path": c["_rel"]}
     artifacts["memory"] = mem_art
+    artifacts["projects"] = {p.get("id", "?"): {"meta": pub_meta(p), "body": p["_body"],
+                                                "path": p["_rel"]}
+                             for p in projects if "id" in p}
     artifacts_json = json.dumps(artifacts).replace("</", "<\\/")
 
     # ---- Board tab ----
@@ -384,9 +500,9 @@ def build_page():
     event_rows = []
     for e in events:
         event_rows.append(
-            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
             % (esc(e.get("ts", "?")), esc(e.get("agent", "?")), esc(e.get("type", "?")),
-               esc(e.get("card_id", "") or e.get("build_id", "") or e.get("note", "")))
+               esc(event_ref(e) or "\u2014"), esc(project_of(e) or "\u2014"))
         )
 
     mem_rows = []
@@ -404,18 +520,130 @@ def build_page():
                esc(c.get("kind", "?")), esc(c.get("key", "?")),
                esc(c.get("updated", "?")), esc(firstline)))
 
+    # ---- Projects tab: overview + one page per project ----
+    proj_rows = []
+    proj_panes = []
+    for pr in sorted(projects, key=lambda p: ((p.get("status") or "") != "active",
+                                              p.get("id", ""))):
+        pid = pr.get("id", "?")
+        pcards = [c for c in cards if c.get("project") == pid]
+        pbuilds = [b for b in builds if b.get("project") == pid]
+        pevents = [e for e in all_events if project_of(e) == pid]
+        pdocs = [d for d in decisions if mentions_project(d, pid)]
+        cell_id = (pr.get("memory_cell") or "").strip()
+        cell = next((c for c in memory.get("cells", []) if c.get("id") == cell_id), None)
+        st = (pr.get("status") or "?").lower()
+        chip = "st-pass" if st == "active" else "dim"
+        repo = (pr.get("repo") or "").strip()
+        repo_html = ("<a href='%s' target='_blank' rel='noopener'>%s</a>"
+                     % (esc(repo), esc(repo)) if repo.startswith("http")
+                     else "<span class='dim'>local only</span>")
+        done = sum(1 for c in pcards if c.get("column") == "done")
+        passed = sum(1 for b in pbuilds if (b.get("status") or "").lower() == "pass")
+        failed = sum(1 for b in pbuilds if (b.get("status") or "").lower() == "fail")
+        streak_kind, streak_n = build_streak(pbuilds)
+
+        proj_rows.append(
+            "<tr class='clickable' data-kind='project' data-id='%s'>"
+            "<td><a href='#proj/%s'>%s</a></td><td class='%s'>%s</td><td>%s</td>"
+            "<td>%d open / %d done</td><td>%d pass / %d fail</td><td>%d</td></tr>"
+            % (esc(pid), esc(pid), esc(pr.get("title") or pid), chip, esc(st), repo_html,
+               len(pcards) - done, done, passed, failed, len(pevents)))
+
+        pan = ["<section class='pane' data-pane='proj/%s'>" % esc(pid)]
+        pan.append("<div class='crumb'><a href='#projects'>&larr; Projects</a>"
+                   " &middot; %s</div>" % esc(pid))
+        pan.append("<h2>%s <span class='%s'>[%s]</span></h2>"
+                   % (esc(pr.get("title") or pid), chip, esc(st)))
+        pan.append("<div class='sub'>owner %s &middot; %s &middot; path %s"
+                   " &middot; memory cell %s &middot; updated %s</div>"
+                   % (esc(pr.get("owner") or "?"), repo_html,
+                      esc(pr.get("path") or "?"), esc(cell_id or "\u2014"),
+                      esc(pr.get("updated_at") or "?")))
+        pan.append("<div class='prose'>%s</div>" % md_lite(pr.get("_body", "")))
+
+        pan.append("<h2>Cards here</h2>")
+        crows = []
+        for c in sorted(pcards, key=lambda c: (COLUMN_RANK.get(c["column"], 9),
+                                               c.get("id", ""))):
+            crows.append(
+                "<tr class='clickable' data-kind='card' data-id='%s'>"
+                "<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+                % (esc(c.get("id", "?")), esc(c.get("id", "?")),
+                   esc(c.get("title", "(no title)")), esc(c.get("column", "?")),
+                   esc(c.get("assignee", "unassigned")), esc(c.get("updated_at", "?"))))
+        pan.append("<table><tr><th>ID</th><th>Title</th><th>Column</th><th>Assignee</th>"
+                   "<th>Updated</th></tr>%s</table>"
+                   % ("".join(crows) or "<tr><td colspan='5'>no cards tagged %s</td></tr>"
+                      % esc(pid)))
+
+        pan.append("<h2>Builds here</h2>")
+        pan.append("<p class='sub'>latest streak: %d %s in a row</p>" % (streak_n, streak_kind)
+                   if streak_kind else "<p class='sub'>no pass/fail builds recorded</p>")
+        brows = []
+        for b in pbuilds:
+            bst = (b.get("status", "pending")).lower()
+            bchip = {"pass": "st-pass", "fail": "st-fail"}.get(bst, "st-review")
+            brows.append(
+                "<tr class='clickable' data-kind='build' data-id='%s'>"
+                "<td>%s</td><td>%s</td><td>%s</td><td class='%s'>%s</td><td>%s</td></tr>"
+                % (esc(b.get("id", "?")), esc(b.get("id", "?")), esc(b.get("target", "?")),
+                   esc(b.get("agent", "?")), bchip, esc(bst), esc(b.get("ts", "?"))))
+        pan.append("<table><tr><th>ID</th><th>Target</th><th>Agent</th><th>Status</th>"
+                   "<th>TS</th></tr>%s</table>"
+                   % ("".join(brows) or "<tr><td colspan='5'>nothing has been built here"
+                      " through the org pipeline yet</td></tr>"))
+
+        pan.append("<h2>Decisions touching this project</h2>")
+        pan.append("<p class='sub'>decisions have no project field \u2014 matched by"
+                   " name mention only</p>")
+        drows = []
+        for d in pdocs:
+            drows.append("<tr class='clickable' data-kind='decision' data-id='%s'>"
+                         "<td>%s</td><td>%s</td><td>%s</td></tr>"
+                         % (esc(d["id"]), esc(d["id"]), esc(d["date"]), esc(d["title"])))
+        pan.append("<table><tr><th>ID</th><th>Date</th><th>Title</th></tr>%s</table>"
+                   % ("".join(drows) or "<tr><td colspan='3'>no decision text mentions"
+                      " this project</td></tr>"))
+
+        pan.append("<h2>Memory cell</h2>")
+        if cell:
+            pan.append("<pre class='cell'>%s</pre>" % esc(cell.get("_body", "").strip()))
+            pan.append("<div class='drawer-src'>source: <a href='../%s' target='_blank'>%s</a></div>"
+                       % (esc(cell["_rel"]), esc(cell["_rel"])))
+        else:
+            pan.append("<div class='empty'>memory cell '%s' does not exist"
+                       " \u2014 memory/cells/%s.md</div>" % (esc(cell_id or "?"), esc(cell_id or "?")))
+
+        pan.append("<h2>Events scoped to this project</h2>")
+        pan.append("<p class='sub'>%d of %d logged events &middot; scoped by ctx"
+                   " fields (project / card / build / cell / repo)</p>"
+                   % (len(pevents), len(all_events)))
+        erows = []
+        for e in pevents[:25]:
+            erows.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
+                         % (esc(e.get("ts", "?")), esc(e.get("agent", "?")),
+                            esc(e.get("type", "?")), esc(event_ref(e) or "\u2014")))
+        pan.append("<table><tr><th>TS</th><th>Agent</th><th>Type</th><th>Ref</th></tr>%s</table>"
+                   % ("".join(erows) or "<tr><td colspan='4'>no events scope to this"
+                      " project yet</td></tr>"))
+        pan.append("</section>")
+        proj_panes.append("\n".join(pan))
+
     ts = now.strftime("%Y-%m-%d %H:%M:%S")
     html = HTML_TEMPLATE % {
         "ts": ts,
         "artifacts": artifacts_json,
         "board": "\n".join(col_html),
+        "projects": "\n".join(proj_rows) or "<tr><td colspan='6'>no org/projects/*.md files yet</td></tr>",
+        "project_panes": "\n\n".join(proj_panes),
         "pings": "\n".join(pings_html) or '<div class="empty">no open pings</div>',
         "agents": "\n".join(agent_rows) or "<tr><td colspan='7'>no agent files yet</td></tr>",
         "inboxes": "\n".join(inbox_rows) or "<tr><td colspan='2'>none</td></tr>",
         "decisions": "\n".join(decision_rows) or "<tr><td colspan='4'>no decisions yet</td></tr>",
         "memory": "\n".join(mem_rows) or "<tr><td colspan='5'>no memory yet</td></tr>",
         "builds": "\n".join(build_rows) or "<tr><td colspan='5'>no builds recorded yet</td></tr>",
-        "events": "\n".join(event_rows) or "<tr><td colspan='4'>no events yet</td></tr>",
+        "events": "\n".join(event_rows) or "<tr><td colspan='5'>no events yet</td></tr>",
     }
 
     DASHBOARD.mkdir(parents=True, exist_ok=True)
@@ -440,6 +668,55 @@ def generate_board():
         lines.append("")
     STATE.mkdir(parents=True, exist_ok=True)
     (STATE / "BOARD.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def generate_projects():
+    """Plain-text project ledger for agents — same scope rules as the pages."""
+    projects = load_projects()
+    cards = load_md_with_body(ORG / "cards")
+    for c in cards:
+        c["column"] = c.get("column", "backlog")
+        if c["column"] not in KNOWN_COLUMNS:
+            c["column"] = "backlog"
+    builds = load_md_with_body(ORG / "builds")
+    events = load_events(limit=None)
+    project_of = project_scopes(projects, cards, builds)
+
+    lines = ["# Templeton Projects\n",
+             "generated by worker/dashboard.py — a view of org/projects/*.md, not a source\n"]
+    for p in sorted(projects, key=lambda p: p.get("id", "")):
+        pid = p.get("id", "?")
+        pcards = [c for c in cards if c.get("project") == pid]
+        pbuilds = sorted((b for b in builds if b.get("project") == pid),
+                         key=lambda b: b.get("ts") or b.get("id") or "",
+                         reverse=True)
+        open_cards = [c for c in pcards if c.get("column") != "done"]
+        streak = build_streak(pbuilds)
+        nev = sum(1 for e in events if project_of(e) == pid)
+        lines.append("## %s (%s)" % (pid, p.get("title", "")))
+        lines.append("- status: %s | repo: %s | memory cell: %s"
+                     % (p.get("status", "?"), p.get("repo") or "local only",
+                        p.get("memory_cell", "-")))
+        lines.append("- cards: %d open / %d done%s"
+                     % (len(open_cards), len(pcards) - len(open_cards),
+                        "" if open_cards else " (nothing open)"))
+        for c in sorted(open_cards, key=lambda c: c.get("id", "")):
+            lines.append("  - %s [%s]: %s" % (c.get("id", "?"),
+                                              c.get("column", "?"),
+                                              c.get("title", "")))
+        lines.append("- builds: %d pass / %d fail | current streak: %s"
+                     % (sum(1 for b in pbuilds if b.get("status") == "pass"),
+                        sum(1 for b in pbuilds if b.get("status") == "fail"),
+                        "%s of %d" % streak if streak[0] else "none"))
+        lines.append("- events scoped here: %d" % nev)
+        body = (p.get("_body") or "").strip()
+        first = next((ln.strip() for ln in body.splitlines()
+                      if ln.strip() and not ln.startswith("#")), "")
+        if first:
+            lines.append("- from the project artifact: %s" % first)
+        lines.append("")
+    STATE.mkdir(parents=True, exist_ok=True)
+    (STATE / "PROJECTS.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 HTML_TEMPLATE = """<!DOCTYPE html>
@@ -528,15 +805,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                padding: 8px 12px; margin-bottom: 8px; cursor: pointer; font-size: 13px; }
   .msglist li:hover { outline: 1px solid var(--accent); }
   .msglist .dim { display: block; font-size: 11px; }
+  /* project pages */
+  .crumb { font-size: 12px; color: var(--dim); margin-bottom: 6px; }
+  .prose { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+           padding: 12px 16px; margin: 12px 0 20px; max-width: 900px; }
+  .prose p { margin: 0 0 10px; }
+  .prose p:last-child { margin-bottom: 0; }
+  pre.cell, .prose code { font-family: Consolas, monospace; font-size: 12px; }
+  .prose code { background: #21262d; border-radius: 4px; padding: 1px 5px; }
+  pre.cell { background: #10151c; border: 1px solid var(--border); border-radius: 8px;
+             padding: 14px; white-space: pre-wrap; margin: 0 0 6px; max-width: 900px; }
   .refresh-note { position: fixed; bottom: 14px; right: 20px; color: var(--dim); font-size: 11px; }
 </style>
 </head>
 <body>
 <h1>Templeton Systems <span style="color:var(--dim);font-weight:400">— Org Dashboard</span></h1>
-<div class="sub">generated %(ts)s &nbsp;·&nbsp; F:\\Lab &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#memory">Memory</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a></div>
+<div class="sub">generated %(ts)s &nbsp;·&nbsp; F:\\Lab &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#projects">Projects</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#memory">Memory</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a></div>
 
 <nav class="tabs">
   <a href="#board" class="tab" data-tab="board">Board</a>
+  <a href="#projects" class="tab" data-tab="projects">Projects</a>
   <a href="#pings" class="tab" data-tab="pings">Pings</a>
   <a href="#roster" class="tab" data-tab="roster">Roster</a>
   <a href="#memory" class="tab" data-tab="memory">Memory</a>
@@ -550,6 +838,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 %(board)s
 </div>
 </section>
+
+<section class="pane" data-pane="projects">
+<h2>Projects</h2>
+<p class="sub">every project the org works in — click a row for its page: what it is, where it's at, and everything done in it</p>
+<table>
+<tr><th>Project</th><th>Status</th><th>Repo</th><th>Cards</th><th>Builds</th><th>Events</th></tr>
+%(projects)s
+</table>
+</section>
+
+%(project_panes)s
 
 <section class="pane" data-pane="pings">
 <h2>Pings</h2>
@@ -596,8 +895,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <section class="pane" data-pane="events">
 <h2>Recent Events</h2>
+<p class="sub">newest first, last 20 of the log — project column resolved from ctx refs</p>
 <table>
-<tr><th>TS</th><th>Agent</th><th>Type</th><th>Ref</th></tr>
+<tr><th>TS</th><th>Agent</th><th>Type</th><th>Ref</th><th>Project</th></tr>
 %(events)s
 </table>
 </section>
@@ -624,8 +924,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.querySelectorAll('.pane').forEach(function (p) {
       p.classList.toggle('active', p.getAttribute('data-pane') === name);
     });
+    var tab = name.indexOf('proj/') === 0 ? 'projects' : name;
     tabs.forEach(function (t) {
-      t.classList.toggle('active', t.getAttribute('data-tab') === name);
+      t.classList.toggle('active', t.getAttribute('data-tab') === tab);
     });
   }
   function fromHash() {
@@ -708,6 +1009,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   document.addEventListener('click', function (e) {
     var li = e.target.closest && e.target.closest('.msglist li[data-rel]');
     if (li) { openMsg(li.getAttribute('data-rel')); return; }
+    // an explicit link wins — let it navigate (project pages, source files)
+    if (e.target.closest && e.target.closest('a')) return;
     var el = e.target.closest && e.target.closest('[data-kind]');
     if (!el) return;
     var kind = el.getAttribute('data-kind');
@@ -719,6 +1022,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     else if (kind === 'ping') openMsg(id);
     else if (kind === 'inbox') openInbox(id);
     else if (kind === 'memory') openArt('memory', id, id);
+    else if (kind === 'project') openArt('projects', id, id);
   });
 })();
 </script>
@@ -732,4 +1036,5 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 if __name__ == "__main__":
     n = build_page()
     generate_board()
+    generate_projects()
     print("dashboard v2 generated: %d card(s) -> F:\\Lab\\dashboard\\index.html" % n)

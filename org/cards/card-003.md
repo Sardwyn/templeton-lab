@@ -3,6 +3,7 @@ id: card-003
 title: Write org protocol playbook (check-in SOP)
 column: done
 assignee: qwen
+project: templeton-lab
 depends_on: ["card-002"]
 created_at: 2026-10-14T06:45
 updated_at: 2026-10-14T07:02

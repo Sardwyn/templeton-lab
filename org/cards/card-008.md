@@ -3,6 +3,7 @@ id: card-008
 title: Dashboard v2 — pages (tabs) + detail drawers
 column: done
 assignee: qwen
+project: templeton-lab
 depends_on: ["card-002"]
 created_at: 2026-10-14T08:35
 updated_at: 2026-10-15T03:55

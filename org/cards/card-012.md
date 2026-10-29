@@ -3,6 +3,7 @@ id: card-012
 title: Single-writer reality — dispatch-only roster + check-in freshness
 column: done
 assignee: qwen
+project: templeton-lab
 depends_on: ["card-003", "card-007"]
 created_at: 2026-10-29T02:30
 updated_at: 2026-10-29T02:35

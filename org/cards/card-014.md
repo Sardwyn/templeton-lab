@@ -3,6 +3,7 @@ id: card-014
 title: GitHub hosting — remotes for HQ and swarm, push both
 column: done
 assignee: qwen
+project: templeton-lab
 depends_on: ["card-004", "card-012"]
 created_at: 2026-10-29T02:45
 updated_at: 2026-10-29T03:35

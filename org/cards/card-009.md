@@ -3,6 +3,7 @@ id: card-009
 title: Qwen memory Lattice — persistent memory for the local agent
 column: done
 assignee: qwen
+project: templeton-lab
 depends_on: ["card-003"]
 created_at: 2026-10-15T10:45
 updated_at: 2026-10-15T10:50

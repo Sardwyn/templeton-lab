@@ -3,6 +3,7 @@ id: card-002
 title: Build HTML dashboard + Kanban view
 column: done
 assignee: qwen
+project: templeton-lab
 depends_on: ["card-001"]
 created_at: 2026-10-14T06:10
 updated_at: 2026-10-14T06:35

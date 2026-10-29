@@ -3,6 +3,7 @@ id: card-004
 title: git init F:\Lab — org audit trail
 column: done
 assignee: qwen
+project: templeton-lab
 depends_on: []
 created_at: 2026-10-14T06:45
 updated_at: 2026-10-14T09:25
