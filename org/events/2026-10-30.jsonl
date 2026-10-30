@@ -2,3 +2,4 @@
 {"ts": "2026-10-30T01:25", "agent": "qwen", "type": "decision", "decision": "decision-008", "file": "org/decisions/2026-10-30-swarm-rebuild.md", "note": "Brad rules swarm-playpen is rebuilt, not repaired: card-016 parked as the record of the finding, project status parked, 22cc654 stays on main as history"}
 {"ts": "2026-10-30T01:25", "agent": "qwen", "type": "memory_write", "cell": "decision-008", "action": "write"}
 {"ts": "2026-10-30T01:25", "agent": "qwen", "type": "memory_write", "cell": "project-swarm-playpen", "action": "update"}
+{"ts": "2026-10-30T01:29", "agent": "qwen", "type": "push", "repo": "Sardwyn/templeton-lab", "branch": "main", "commit": "79ed81e", "note": "decision-008 pushed: swarm-playpen parked (rebuilt, not repaired), card-016 parked as the record of the finding"}
