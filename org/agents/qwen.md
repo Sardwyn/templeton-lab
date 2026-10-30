@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-30T02:01
-focus: "card-017 done — retro game library options researched (org/notes/retro-game-library-options.md), three questions handed to Brad: target device(s), desktop launcher vs self-hosted server, metadata source / build-our-own. Still waiting on: the swarm rebuild spec (decision-008) and the first real cloud dispatch (card-013)"
+last_heartbeat: 2026-10-30T03:42
+focus: "retro-library verdict written — decision-009 logged (Windows desktop, no server, RomM out), verification pass done against upstream source, recommendation = Playnite with SimpleLauncher as challenger, ES-DE and Pegasus out on the PSP/multi-disc discriminator. card-018 is in backlog and blocked on Brad's approval to install. Still waiting on: the swarm rebuild spec (decision-008) and the first real cloud dispatch (card-013)"
 ---
 
 ## Charter

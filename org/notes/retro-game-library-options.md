@@ -111,3 +111,54 @@ and a built-in scraper.
 3. **Does the metadata source matter, and is "build it ourselves" allowed?**
    ScreenScraper vs IGDB vs LaunchBox's own data, and whether he wants the library
    format to be his own rather than somebody else's schema.
+
+---
+
+## 2026-10-30 — Brad's ruling and the verification pass
+
+Brad answered all three (as **decision-009**,
+`org/decisions/2026-10-30-retro-library-desktop-only.md`): **Windows desktop**,
+**desktop app with no server**, and **RomM is a nogo because "it struggles with PSP
+and Discs in general"**. Everything below supersedes the model B section and the
+one-line answer above; nothing there is deleted, because it happened.
+
+The discriminator became testable: **does the frontend handle PSP images and
+multi-disc games without the user hand-building playlists?** Four candidates were
+checked against their own source, not their marketing copy.
+
+| Candidate | License / health | PSP formats it looks for | Multi-disc | LaunchBox path |
+|---|---|---|---|---|
+| **Playnite** (`JosefNemec/Playnite`) | MIT, 14.4k★, pushed 2026-10-19, WPF desktop | `.iso .cso .pbp .chd` (`emulator.yaml`, `Platforms: sony_psp`) | **Automatic** — official docs: "Playnite by default groups multi-disc games under one game entry", split/merge in the right-click menu; `source/Playnite/Common/M3U.cs` parses `.m3u` incl. RetroArch's `:`/`\|` extension suffixes | **Metadata only** — `Jeshibu/PlayniteExtensions` ships `Metadata_LaunchBox.yaml` / `LaunchBoxMetadata` plugin. No LaunchBox **library** importer exists; the library itself is re-scanned |
+| **SimpleLauncher** (`purelogiccode/SimpleLauncher`) | GPL-3.0, 266★, pushed **2026-10-30**, .NET 10 WPF + Avalonia desktop | `cso, chd, iso, pbp, elf, prx` (`docs/parameters.md`), PPSSPPWindows64.exe | **Deepest mechanics, least automatic** — `ChdMountStrategy` (19 emulators, virtual drive via bundled `CHDMounter`/Dokan), `ChdToCueStrategy`, `DiscConverter` (CHD→ISO, CHD→CUE/BIN, **PBP→CUE/BIN**), plus a per-system "Group Files by Folder" knob and `.m3u` pass-through. It **generates** no `.m3u` | No import path found — `search: LaunchBox` in the repo returns 0 hits |
+| **ES-DE** (`ltusius/EmulationStation-DE`) | MIT, 507★, pushed 2026-10-26, Qt desktop | PPSSPP **standalone only**, PSP = "single disc image file" | **Manual** — USERGUIDE: the user builds `Game.m3u/` directories themselves; the `.m3u` generator is a separate third-party script. Multi-disc "just works" is not on offer | none |
+| **OpenBoxGL** (`vindeckyy/OpenBoxGL`) | AGPL-3.0, 35★, Python | `.pbp .iso .cso` — **no `.chd`** (`emulator_defs/ppsspp-psp.yaml`) | Its `docs/PARITY.md` marks multi-disc M3U generation **done** — but see below | Tracks LaunchBox parity deliberately |
+
+**OpenBoxGL is out on architecture, not on features.** Its own parity doc describes
+"a server-computed capability contract", and the tree is `handlers/` + `static/` +
+`cloud_sync.py` — it is a localhost web app, which is model B wearing a desktop
+costume. Under the no-server ruling it cannot be the answer, and its PSP definition
+missing `.chd` would have disqualified it anyway. **ES-DE is out on multi-disc**:
+it requires hand-authored playlists, which is precisely the failure Brad named.
+
+### Recommendation
+
+**Playnite**, with **SimpleLauncher** as the challenger worth a second look.
+
+- **Playnite** is the only candidate that satisfies every constraint from Brad plus
+  the discriminator without manual work: Windows desktop app, no server, MIT,
+  14,393 stars, `.iso/.cso/.pbp/.chd` for PSP, automatic multi-disc grouping, and a
+  LaunchBox **metadata** plugin so the old library's data isn't lost. The honest
+  caveat: Playnite's community extension repo has no LaunchBox *library* importer —
+  the games get re-scanned from the ROM folders, the metadata gets pulled from
+  LaunchBox.
+- **SimpleLauncher** has the strongest raw disc machinery of anything checked —
+  CHD mounting, CHD→ISO/CUE conversion, PBP→CUE/BIN — and it released hours ago.
+  It costs more to adopt: GPL-3.0, small community, no metadata scraper beyond
+  RetroAchievements and image packs, no `.m3u` generation, no LaunchBox import.
+- **Third runner-up, for the couch**: `batocera.emulationstation`-style frontends
+  are moot while the target is one Windows desktop.
+
+**Card-018** now exists in `backlog` for the trial: install Playnite (and optionally
+a SimpleLauncher portable build), point it at the PSP and PSX folders, and check the
+multi-disc grouping and PPSSPP launch behaviour on real files. Nothing installs
+without Brad's explicit approval — that is decision-002 and it still holds.
