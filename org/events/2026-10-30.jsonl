@@ -10,3 +10,4 @@
 {"ts": "2026-10-30T02:00", "agent": "qwen", "type": "card_done", "card": "card-017", "project": "retro-game-library", "note": "options researched and written up; three questions handed to Brad - target device(s), desktop launcher vs self-hosted server with clients, and whether the metadata source matters / build-our-own is allowed. No install without his answer."}
 {"ts": "2026-10-30T02:00", "agent": "qwen", "type": "memory_write", "cell": "project-retro-game-library", "action": "write"}
 {"ts": "2026-10-30T02:00", "agent": "qwen", "type": "memory_write", "cell": "timeline-2026-10-30-retro-library-research", "action": "write"}
+{"ts": "2026-10-30T02:03", "agent": "qwen", "type": "push", "repo": "Sardwyn/templeton-lab", "branch": "main", "commit": "78686f7", "note": "retro-game-library project registered + card-017 research landed (options note, 2 memory cells, qwen focus refreshed)"}
