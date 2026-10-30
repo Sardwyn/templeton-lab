@@ -878,7 +878,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <section class="pane" data-pane="memory">
 <h2>Qwen's Memory — the Lattice</h2>
-<p class="sub">hot tier + warm cells — click to open · recall: python worker\recall.py · write: python worker\remember.py</p>
+<p class="sub">hot tier + warm cells — click to open · recall: python worker\\recall.py · write: python worker\\remember.py</p>
 <table>
 <tr><th>Cell</th><th>Kind</th><th>Key</th><th>Updated</th><th>First line</th></tr>
 %(memory)s

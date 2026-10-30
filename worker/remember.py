@@ -57,10 +57,15 @@ def main():
     if supersede:
         sup_line = supersede
     elif existing:
-        # preserve previous supersedes on update
+        # preserve previous supersedes on update — unwrap the frontmatter list
+        # so a re-write doesn't nest brackets into `[[]]`
         for line in existing.splitlines():
             if line.strip().startswith("supersedes:"):
-                sup_line = line.split(":", 1)[1].strip()
+                raw = line.split(":", 1)[1].strip()
+                parts = [p.strip().strip("\"'")
+                         for p in raw.strip("[] ").split(",")
+                         if p.strip().strip("[]").strip("\"'")]
+                sup_line = ", ".join(parts)
                 break
 
     body = text.strip()
@@ -96,7 +101,7 @@ def main():
         f.write(json.dumps(entry) + "\n")
 
     print("%s memory cell: %s (%s)" % (action, path.name,
-                                      "supersedes " + supersede if supersede else "new"))
+                                      "supersedes " + supersede if supersede else action))
 
 
 if __name__ == "__main__":

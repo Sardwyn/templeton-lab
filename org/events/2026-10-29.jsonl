@@ -35,3 +35,5 @@
 {"ts": "2026-10-29T23:51", "agent": "qwen", "type": "note", "note": "decision-007 implemented: org/projects/*.md are project sources; project: back-filled on 14 cards and 4 builds; dashboard v2 adds hash-routed per-project pages (#proj/<id>) and a Projects tab; state/PROJECTS.md added to the regenerated view set; SOP bumped to v1.6"}
 {"ts": "2026-10-29T23:51", "agent": "qwen", "type": "card_done", "card": "card-015", "project": "templeton-lab", "note": "five project pages render and scope by explicit refs; finding handed to Brad: swarm-playpen is red at 22cc654 (3 director contract tests) and card-016 is unassigned pending his ruling"}
 {"ts": "2026-10-29T23:53", "agent": "qwen", "type": "push", "repo": "Sardwyn/templeton-lab", "branch": "main", "commit": "ef21d54", "note": "card-015 landed in HQ: org/projects sources, project: back-fill, dashboard v2 project pages, SOP v1.6"}
+{"ts": "2026-10-29T23:55", "agent": "qwen", "type": "memory_write", "cell": "project-templeton", "action": "update"}
+{"ts": "2026-10-29T23:55", "agent": "qwen", "type": "memory_write", "cell": "lesson-dashboard-v2-scoping", "action": "write"}
