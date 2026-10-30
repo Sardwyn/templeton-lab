@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-30T01:25
-focus: "card-015 done and pushed (projects first-class, per-project pages); card-016 parked by decision-008 — swarm-playpen gets rebuilt, not repaired. Waiting on Brad for the rebuild spec and for the first real cloud dispatch (card-013)"
+last_heartbeat: 2026-10-30T02:01
+focus: "card-017 done — retro game library options researched (org/notes/retro-game-library-options.md), three questions handed to Brad: target device(s), desktop launcher vs self-hosted server, metadata source / build-our-own. Still waiting on: the swarm rebuild spec (decision-008) and the first real cloud dispatch (card-013)"
 ---
 
 ## Charter
