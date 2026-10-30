@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-29T23:53
-focus: "card-015 done (projects first-class: org/projects sources, per-project dashboard pages); open decision for Brad — card-016, the swarm director regression, stays unassigned until he rules"
+last_heartbeat: 2026-10-30T01:25
+focus: "card-015 done and pushed (projects first-class, per-project pages); card-016 parked by decision-008 — swarm-playpen gets rebuilt, not repaired. Waiting on Brad for the rebuild spec and for the first real cloud dispatch (card-013)"
 ---
 
 ## Charter

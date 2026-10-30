@@ -6,8 +6,12 @@ assignee: unassigned
 project: swarm-playpen
 depends_on: []
 created_at: 2026-10-29T04:40
-updated_at: 2026-10-29T04:40
+updated_at: 2026-10-30T00:05
 ---
+
+**Parked by Brad's ruling (decision-008, 2026-10-30): the project gets rebuilt, so
+this regression will not be repaired.** It stays on the board as the record of the
+finding, not as work to do.
 
 Recorded so the finding has an owner slot instead of living only in prose.
 
