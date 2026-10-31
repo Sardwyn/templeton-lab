@@ -5,10 +5,15 @@ works from file:// or via worker/serve.py). Also writes the plain-text
 board to F:\\Lab\\state\\BOARD.md for tools that read markdown.
 
 Tabs (hash-routed): board | projects | pings | roster | builds | events
-Projects: `#proj/<id>` opens a per-project page — cards, builds, decisions
-(by mention), the project's memory cell, and events scoped by ctx refs.
-Drawers: click any card / ping / build / agent / inbox / decision / project to
-open the full artifact. Artifact bodies are embedded as JSON in the page.
+Projects: `#proj/<id>` opens a per-project page — deliverables (org/notes/*.md),
+cards, builds, decisions (by mention), the project's memory cell, and events
+scoped by ctx refs.
+Drawers: click any card / ping / build / agent / inbox / decision / note /
+project to open the full artifact. Artifact bodies are embedded as JSON.
+
+Linking rule (Brad, 2026-10-31): every reference to a card, .md file, note,
+decision, build log, or memory cell is labelled with its FULL path
+(`F:\\Lab\\...`) and links to the file itself — never a bare id or filename.
 """
 import datetime
 import json
@@ -24,6 +29,127 @@ DASHBOARD = LAB / "dashboard"
 COLUMNS = ["backlog", "in-progress", "review", "done", "blocked"]
 KNOWN_COLUMNS = set(COLUMNS)
 COLUMN_RANK = {name: i for i, name in enumerate(COLUMNS)}
+
+
+# ---------- full-path linking (Brad, 2026-10-31) ----------
+# Rule: every reference to a card, .md file, note, decision, build log, or
+# memory cell is labelled with its FULL path and links to the file itself.
+
+INDEX_DIRS = ("org", "memory", "state", "worker", "transport", "dashboard")
+SKIP_PARTS = {".git", "__pycache__", "swarm", "node_modules", ".venv"}
+LINK_EXTS = {"md", "jsonl", "json", "html", "py", "log", "yaml", "yml", "txt",
+             "css", "js"}
+
+FILE_INDEX = {}          # rel posix path -> True, for every record file
+DECISION_BY_ID = {}      # filled by load_decisions(); decision-009 -> file path
+
+
+def scan_index():
+    r"""Every linkable file under F:\Lab so any path token can be verified."""
+    idx = {}
+    for d in INDEX_DIRS:
+        root = LAB / d
+        if not root.exists():
+            continue
+        for p in root.rglob("*"):
+            if not p.is_file():
+                continue
+            if p.suffix.lower().lstrip(".") not in LINK_EXTS:
+                continue
+            if SKIP_PARTS & set(p.parts):
+                continue
+            idx[p.relative_to(LAB).as_posix()] = True
+    return idx
+
+
+FILE_INDEX = scan_index()
+PATH_LIST = sorted(FILE_INDEX)
+
+
+def win_path(rel):
+    r"""The full Windows path used as the label of every artifact link."""
+    return "F:\\Lab\\" + str(rel).replace("/", "\\")
+
+
+def ref_link(rel):
+    """A link to the file itself. href works over http (serve.py /raw/); the
+    page's JS rewrites it for file:// (dashboard/index.html -> ../rel)."""
+    return "<a class='fp' href='raw/%s' target='_blank'>%s</a>" % (
+        esc(rel), esc(win_path(rel)))
+
+
+def rel_of(token):
+    """Map a written path or a bare id (card-017, build-..., decision-009,
+    memory cell id) to its repo-relative file path; '' if nothing matches."""
+    token = str(token).strip().strip("`").strip("'").strip('"')
+    if not token:
+        return ""
+    flat = token.replace("\\", "/")
+    if flat.lower().startswith("f:/lab/"):
+        flat = flat[len("f:/lab/"):]
+    flat = flat.lstrip("/")
+    if flat in FILE_INDEX:
+        return flat
+    for cand in ("org/cards/%s.md", "org/builds/%s.md", "org/notes/%s.md",
+                 "org/projects/%s.md", "org/agents/%s.md"):
+        guess = cand % token
+        if guess in FILE_INDEX:
+            return guess
+    # a decision id names its decision text first, its memory cell second
+    if token in DECISION_BY_ID:
+        return DECISION_BY_ID[token]
+    guess = "memory/cells/%s.md" % token
+    return guess if guess in FILE_INDEX else ""
+
+
+# a token worth printing as a path; anything else is prose and stays prose
+PATHISH_RE = re.compile(
+    r"^(?:[A-Za-z]:[\\/]|[\w.\-/]+[/\\])"                       # dir-ish
+    r"|^[^./\\]*\.(?:md|jsonl|json|html|py|log|ya?ml|txt|css|js)"  # bare file
+    r"|^(?:card-\d|build-\d|decision-\d)")
+
+
+def ref_cell(token):
+    """Render a reference (id or path) as a full-path link; dim text when the
+    file genuinely does not exist — a missing file is shown, never hidden.
+    Prose that is not a path is printed as it was written, never dressed up
+    as a path."""
+    rel = rel_of(token)
+    if rel:
+        return ref_link(rel)
+    if not token:
+        return "<span class='dim'>\u2014</span>"
+    if PATHISH_RE.match(str(token)):
+        return "<span class='dim'>%s</span>" % esc(win_path(token))
+    return "<span class='dim'>%s</span>" % linkify(esc(token))
+
+
+LINK_RE = re.compile(
+    r"F:\\\\Lab\\\\[\w.\-\\]+"                        # a written full path
+    r"|[\w\-/]+\.(?:md|jsonl|json|html|py|log|ya?ml|txt|css|js)"   # rel path + ext
+    r"|\b(?:card-\d{3}|build-\d{8}[-\w]*|decision-\d{3})\b")       # bare ids
+
+CODE_SENTINELS = ("\x00", "\x01")
+
+
+def code_span(m):
+    """A `code` span whose text is a known artifact becomes a full-path link."""
+    inner = m.group(1)
+    rel = rel_of(inner)
+    body = ref_link(rel) if rel else "<code>%s</code>" % esc(inner)
+    return CODE_SENTINELS[0] + body + CODE_SENTINELS[1]
+
+
+def linkify(html):
+    """One pass over escaped markup: paths and bare ids become full-path links.
+    Code-span regions are left alone and inserted links are never re-scanned."""
+    out = []
+    for i, chunk in enumerate(re.split(r"\x00|\x01", html)):
+        if i % 2:
+            out.append(chunk)
+        else:
+            out.append(LINK_RE.sub(lambda m: ref_cell(m.group(0)), chunk))
+    return "".join(out).replace("\x00", "").replace("\x01", "")
 
 
 # ---------- loading ----------
@@ -177,6 +303,55 @@ def load_decisions():
                 "body": body,
                 "path": f.relative_to(LAB).as_posix(),
             })
+            DECISION_BY_ID[fm.get("id", f.stem)] = f.relative_to(LAB).as_posix()
+    return out
+
+
+def load_notes():
+    """org/notes/*.md — the deliverables. Some notes have no frontmatter, so
+    this loader is tolerant and falls back to the filename."""
+    out = []
+    ndir = ORG / "notes"
+    if not ndir.exists():
+        return out
+    for f in sorted(ndir.glob("*.md")):
+        fm, body = load_msg(f)
+        fm = fm or {}
+        title = ""
+        for line in body.splitlines():
+            if line.startswith("# "):
+                title = line[2:].strip()
+                break
+        rec = dict(fm)
+        rec["id"] = fm.get("id") or f.stem
+        rec["title"] = title or f.stem
+        rec["_body"] = body
+        rec["_rel"] = f.relative_to(LAB).as_posix()
+        out.append(rec)
+    return out
+
+
+def note_scopes(notes, projects, cards):
+    """Scope each note to a project: an explicit `project:` ref wins, then the
+    `card:` it was written for, then a project-name mention."""
+    out = {}
+    for n in notes:
+        pid = (n.get("project") or "").strip()
+        if pid:
+            out[n["_rel"]] = pid
+            continue
+        card = (n.get("card") or "").strip()
+        hit = ""
+        for c in cards:
+            if c.get("id") == card and c.get("project"):
+                hit = c["project"]
+                break
+        if not hit:
+            for p in projects:
+                if p.get("id") and mentions_project(n, p["id"]):
+                    hit = p["id"]
+                    break
+        out[n["_rel"]] = hit
     return out
 
 
@@ -310,13 +485,31 @@ def event_ref(e):
     return ""
 
 
+def event_ref_html(e):
+    """Ref column as a link: an artifact ref becomes its full-path link, a repo
+    ref links to GitHub, a bare message stays plain text."""
+    if e.get("repo"):
+        repo = str(e["repo"])
+        if "/" in repo:
+            return "<a class='fp' href='https://github.com/%s' target='_blank" \
+                   "' rel='noopener'>%s</a>" % (esc(repo), esc(repo))
+        return esc(repo)
+    if e.get("message"):
+        return esc(str(e["message"]))
+    tok = event_ref(e)
+    return ref_cell(tok) if tok else "\u2014"
+
+
 def md_lite(text):
-    """Minimal markdown for our prose artifacts: paragraphs, **bold**, `code`."""
+    """Minimal markdown for our prose artifacts: paragraphs, **bold**, `code`.
+    Paths and bare ids anywhere in the prose become full-path links; a `code`
+    span naming an artifact becomes a link too (linkify runs last, one pass)."""
     parts = []
     for para in re.split(r"\n\s*\n", (text or "").strip()):
         p = esc(para.strip()).replace("\n", " ")
         p = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", p)
-        p = re.sub(r"`([^`]+)`", r"<code>\1</code>", p)
+        p = re.sub(r"`([^`]+)`", code_span, p)
+        p = linkify(p)
         if p:
             parts.append("<p>%s</p>" % p)
     return "".join(parts)
@@ -340,6 +533,8 @@ def build_page():
     projects = load_projects()
     all_events = load_events(limit=None)
     project_of = project_scopes(projects, cards, builds)
+    notes = load_notes()          # decisions load first: DECISION_BY_ID must be filled
+    note_of = note_scopes(notes, projects, cards)
 
     names = {a.get("id", "?"): (a.get("name") or a.get("id")) for a in agents}
 
@@ -354,7 +549,8 @@ def build_page():
                   for a in agents},
         "builds": {b.get("id", "?"): {"meta": pub_meta(b), "body": b["_body"], "path": b["_rel"]}
                   for b in builds if "id" in b},
-        "pings": {p["rel"]: {"meta": pub_meta(p), "body": p.get("body", "")}
+        "pings": {p["rel"]: {"meta": pub_meta(p), "body": p.get("body", ""),
+                             "path": p["rel"]}
                  for p in pings},
         "inbox": {name: msgs for name, msgs in inboxes.items()},
         "decisions": {d["id"]: d for d in decisions},
@@ -373,6 +569,19 @@ def build_page():
     artifacts["projects"] = {p.get("id", "?"): {"meta": pub_meta(p), "body": p["_body"],
                                                 "path": p["_rel"]}
                              for p in projects if "id" in p}
+    artifacts["notes"] = {n.get("id", "?"): {"meta": pub_meta(n), "body": n["_body"],
+                                             "path": n["_rel"]}
+                          for n in notes if "id" in n}
+    # every artifact record carries its own full Windows path: the drawer labels
+    # its source link the way Brad reads a path, not as a bare id
+    for _group in artifacts.values():
+        for val in _group.values():
+            if isinstance(val, list):
+                for m in val:
+                    if isinstance(m, dict) and m.get("rel"):
+                        m["win"] = win_path(m["rel"])
+            elif isinstance(val, dict) and val.get("path"):
+                val["win"] = win_path(val["path"])
     artifacts_json = json.dumps(artifacts).replace("</", "<\\/")
 
     # ---- Board tab ----
@@ -388,16 +597,19 @@ def build_page():
                     deps.append(d)
             dep_html = ""
             if deps:
-                dep_html = '<div class="deps">deps: ' + ", ".join(esc(d) for d in deps) + "</div>"
+                dep_html = ('<div class="deps">deps: '
+                            + " &middot; ".join(ref_cell(d) for d in deps) + "</div>")
             cards_html.append(
                 '<div class="card clickable col-%s" data-kind="card" data-id="%s">'
-                '<div class="card-head"><span class="cid">%s</span><span class="assignee">%s</span></div>'
+                '<div class="card-head"><span class="assignee">%s</span></div>'
+                '<div class="cid">%s</div>'
                 '<div class="card-title">%s</div>'
                 '<div class="card-meta">updated %s</div>'
                 "%s"
                 "</div>"
-                % (col.replace("-", ""), esc(c.get("id", "?")), esc(c.get("id", "?")),
-                   esc(c.get("assignee", "unassigned")), esc(c.get("title", "(no title)")),
+                % (col.replace("-", ""), esc(c.get("id", "?")),
+                   esc(c.get("assignee", "unassigned")), ref_cell(c.get("id", "?")),
+                   esc(c.get("title", "(no title)")),
                    esc(c.get("updated_at", "?")), dep_html)
             )
         col_html.append(
@@ -412,24 +624,23 @@ def build_page():
     for p in pings:
         cls = " to-brad" if p.get("to") == "brad" else ""
         card = p.get("card", "")
-        card_note = (
-            ' · <a href="../org/cards/%s.md">%s</a>' % (esc(card), esc(card))
-            if card else ""
-        )
+        card_note = (" &middot; card: %s" % ref_cell(card)) if card else ""
         work = p.get("work", "")
         work_note = ""
         if work:
             if work.lower().startswith("http"):
-                work_note = ' · work: <a href="%s">%s</a>' % (esc(work), esc(work))
+                work_note = ' &middot; work: <a href="%s" target="_blank" rel="noopener">%s</a>' % (
+                    esc(work), esc(work))
             else:
-                work_note = " · work: %s" % esc(work)
+                work_note = " &middot; work: %s" % ref_cell(work)
         pings_html.append(
             '<div class="pingrow clickable%s" data-kind="ping" data-id="%s">'
             "<b>%s → %s</b> — %s <span class='dim'>· needs: %s</span>%s%s"
+            "<div class='fp-src'>%s</div>"
             "</div>"
             % (cls, esc(p["rel"]), esc(disp(p.get("from", "?"))),
                esc(disp(p.get("to", "?"))), esc(p.get("subject", "")),
-               esc(p.get("needs", "-")), card_note, work_note)
+               esc(p.get("needs", "-")), card_note, work_note, ref_cell(p["rel"]))
         )
 
     # ---- Roster tab ----
@@ -464,10 +675,10 @@ def build_page():
             esc(status), esc(status),
             " <span class='stale'>%s</span>" % stale if stale else "")
         agent_rows.append(
-            "<tr class='clickable' data-kind='agent' data-id='%s'><td>%s</td><td>%s</td>%s"
+            "<tr class='clickable' data-kind='agent' data-id='%s'><td>%s</td><td>%s</td><td>%s</td>%s"
             "<td>%s</td><td>%s</td><td>%s</td></tr>"
-            % (esc(aid), esc(names.get(aid, aid)), esc(a.get("role", "")), status_cell,
-               esc(clean("scope")), esc(clean("schedule")), esc(hb_disp))
+            % (esc(aid), ref_cell(aid), esc(names.get(aid, aid)), esc(a.get("role", "")),
+               status_cell, esc(clean("scope")), esc(clean("schedule")), esc(hb_disp))
         )
 
     inbox_rows = []
@@ -482,7 +693,7 @@ def build_page():
     for d in decisions:
         decision_rows.append(
             "<tr class='clickable' data-kind='decision' data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
-            % (esc(d["id"]), esc(d["id"]), esc(d["date"]), esc(d["status"]), esc(d["title"])))
+            % (esc(d["id"]), ref_cell(d["id"]), esc(d["date"]), esc(d["status"]), esc(d["title"])))
 
     # ---- Builds tab ----
     build_rows = []
@@ -492,37 +703,48 @@ def build_page():
         build_rows.append(
             "<tr class='clickable' data-kind='build' data-id='%s'><td>%s</td><td>%s</td><td>%s</td>"
             "<td class='%s'>%s</td><td>%s</td></tr>"
-            % (esc(b.get("id", "?")), esc(b.get("id", "?")), esc(b.get("target", "?")),
+            % (esc(b.get("id", "?")), ref_cell(b.get("id", "?")), esc(b.get("target", "?")),
                esc(b.get("agent", "?")), chip, esc(st), esc(b.get("ts", "?")))
         )
 
     # ---- Events tab ----
     event_rows = []
     for e in events:
+        pid = project_of(e)
         event_rows.append(
             "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
             % (esc(e.get("ts", "?")), esc(e.get("agent", "?")), esc(e.get("type", "?")),
-               esc(event_ref(e) or "\u2014"), esc(project_of(e) or "\u2014"))
+               event_ref_html(e),
+               "<a href='#proj/%s'>%s</a>" % (esc(pid), esc(pid)) if pid else "\u2014")
         )
 
     mem_rows = []
     if memory.get("core"):
         mem_rows.append(
             "<tr class='clickable' data-kind='memory' data-id='core'>"
-            "<td>core.md</td><td>core</td><td>\u2014</td><td>always</td>"
-            "<td>hot tier \u2014 identity, Brad, standing preferences</td></tr>")
+            "<td>%s</td><td>core</td><td>\u2014</td><td>always</td>"
+            "<td>hot tier \u2014 identity, Brad, standing preferences</td></tr>"
+            % ref_link("memory/core.md"))
     for c in memory.get("cells", []):
         firstline = (c.get("_body", "").splitlines() or [""])[0].strip()[:60]
         mem_rows.append(
             "<tr class='clickable' data-kind='memory' data-id='%s'><td>%s</td>"
             "<td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
-            % (esc(c.get("id", "?")), esc(c.get("id", "?")),
+            % (esc(c.get("id", "?")), ref_cell(c.get("id", "?")),
                esc(c.get("kind", "?")), esc(c.get("key", "?")),
                esc(c.get("updated", "?")), esc(firstline)))
 
     # ---- Projects tab: overview + one page per project ----
     proj_rows = []
     proj_panes = []
+    note_rows = []
+    for n in notes:
+        npid = note_of.get(n["_rel"], "")
+        note_rows.append(
+            "<tr class='clickable' data-kind='note' data-id='%s'><td>%s</td><td>%s</td></tr>"
+            % (esc(n.get("id", "?")), ref_cell(n["_rel"]),
+               "<a href='#proj/%s'>%s</a>" % (esc(npid), esc(npid)) if npid
+               else "<span class='dim'>unscoped</span>"))
     for pr in sorted(projects, key=lambda p: ((p.get("status") or "") != "active",
                                               p.get("id", ""))):
         pid = pr.get("id", "?")
@@ -530,6 +752,7 @@ def build_page():
         pbuilds = [b for b in builds if b.get("project") == pid]
         pevents = [e for e in all_events if project_of(e) == pid]
         pdocs = [d for d in decisions if mentions_project(d, pid)]
+        pnotes = [n for n in notes if note_of.get(n["_rel"]) == pid]
         cell_id = (pr.get("memory_cell") or "").strip()
         cell = next((c for c in memory.get("cells", []) if c.get("id") == cell_id), None)
         st = (pr.get("status") or "?").lower()
@@ -546,21 +769,37 @@ def build_page():
         proj_rows.append(
             "<tr class='clickable' data-kind='project' data-id='%s'>"
             "<td><a href='#proj/%s'>%s</a></td><td class='%s'>%s</td><td>%s</td>"
-            "<td>%d open / %d done</td><td>%d pass / %d fail</td><td>%d</td></tr>"
+            "<td>%d open / %d done</td><td>%d pass / %d fail</td><td>%d</td><td>%d</td></tr>"
             % (esc(pid), esc(pid), esc(pr.get("title") or pid), chip, esc(st), repo_html,
-               len(pcards) - done, done, passed, failed, len(pevents)))
+               len(pcards) - done, done, passed, failed, len(pnotes), len(pevents)))
 
         pan = ["<section class='pane' data-pane='proj/%s'>" % esc(pid)]
         pan.append("<div class='crumb'><a href='#projects'>&larr; Projects</a>"
                    " &middot; %s</div>" % esc(pid))
         pan.append("<h2>%s <span class='%s'>[%s]</span></h2>"
                    % (esc(pr.get("title") or pid), chip, esc(st)))
-        pan.append("<div class='sub'>owner %s &middot; %s &middot; path %s"
+        pan.append("<div class='sub'>owner %s &middot; %s &middot; source %s"
                    " &middot; memory cell %s &middot; updated %s</div>"
                    % (esc(pr.get("owner") or "?"), repo_html,
-                      esc(pr.get("path") or "?"), esc(cell_id or "\u2014"),
+                      ref_link(pr.get("_rel") or rel_of(pid)),
+                      ref_cell(cell_id or "\u2014"),
                       esc(pr.get("updated_at") or "?")))
         pan.append("<div class='prose'>%s</div>" % md_lite(pr.get("_body", "")))
+
+        pan.append("<h2>Deliverables here</h2>")
+        pan.append("<p class='sub'>org/notes/*.md scoped to this project &mdash; the path"
+                   " is a link that opens the file</p>")
+        nrows = []
+        for n in pnotes:
+            nrows.append(
+                "<tr class='clickable' data-kind='note' data-id='%s'>"
+                "<td>%s</td><td>%s</td><td>%s</td></tr>"
+                % (esc(n.get("id", "?")), ref_cell(n["_rel"]),
+                   esc(n.get("title", "")),
+                   esc(n.get("card", "") or n.get("date", "") or "\u2014")))
+        pan.append("<table><tr><th>File</th><th>Title</th><th>For</th></tr>%s</table>"
+                   % ("".join(nrows) or "<tr><td colspan='3'>nothing written down for %s"
+                      " yet</td></tr>" % esc(pid)))
 
         pan.append("<h2>Cards here</h2>")
         crows = []
@@ -569,10 +808,10 @@ def build_page():
             crows.append(
                 "<tr class='clickable' data-kind='card' data-id='%s'>"
                 "<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
-                % (esc(c.get("id", "?")), esc(c.get("id", "?")),
+                % (esc(c.get("id", "?")), ref_cell(c.get("id", "?")),
                    esc(c.get("title", "(no title)")), esc(c.get("column", "?")),
                    esc(c.get("assignee", "unassigned")), esc(c.get("updated_at", "?"))))
-        pan.append("<table><tr><th>ID</th><th>Title</th><th>Column</th><th>Assignee</th>"
+        pan.append("<table><tr><th>File</th><th>Title</th><th>Column</th><th>Assignee</th>"
                    "<th>Updated</th></tr>%s</table>"
                    % ("".join(crows) or "<tr><td colspan='5'>no cards tagged %s</td></tr>"
                       % esc(pid)))
@@ -587,9 +826,9 @@ def build_page():
             brows.append(
                 "<tr class='clickable' data-kind='build' data-id='%s'>"
                 "<td>%s</td><td>%s</td><td>%s</td><td class='%s'>%s</td><td>%s</td></tr>"
-                % (esc(b.get("id", "?")), esc(b.get("id", "?")), esc(b.get("target", "?")),
+                % (esc(b.get("id", "?")), ref_cell(b.get("id", "?")), esc(b.get("target", "?")),
                    esc(b.get("agent", "?")), bchip, esc(bst), esc(b.get("ts", "?"))))
-        pan.append("<table><tr><th>ID</th><th>Target</th><th>Agent</th><th>Status</th>"
+        pan.append("<table><tr><th>File</th><th>Target</th><th>Agent</th><th>Status</th>"
                    "<th>TS</th></tr>%s</table>"
                    % ("".join(brows) or "<tr><td colspan='5'>nothing has been built here"
                       " through the org pipeline yet</td></tr>"))
@@ -601,19 +840,21 @@ def build_page():
         for d in pdocs:
             drows.append("<tr class='clickable' data-kind='decision' data-id='%s'>"
                          "<td>%s</td><td>%s</td><td>%s</td></tr>"
-                         % (esc(d["id"]), esc(d["id"]), esc(d["date"]), esc(d["title"])))
-        pan.append("<table><tr><th>ID</th><th>Date</th><th>Title</th></tr>%s</table>"
+                         % (esc(d["id"]), ref_cell(d["id"]), esc(d["date"]), esc(d["title"])))
+        pan.append("<table><tr><th>File</th><th>Date</th><th>Title</th></tr>%s</table>"
                    % ("".join(drows) or "<tr><td colspan='3'>no decision text mentions"
                       " this project</td></tr>"))
 
         pan.append("<h2>Memory cell</h2>")
         if cell:
             pan.append("<pre class='cell'>%s</pre>" % esc(cell.get("_body", "").strip()))
-            pan.append("<div class='drawer-src'>source: <a href='../%s' target='_blank'>%s</a></div>"
-                       % (esc(cell["_rel"]), esc(cell["_rel"])))
+            pan.append("<div class='drawer-src'>source: %s</div>" % ref_link(cell["_rel"]))
         else:
-            pan.append("<div class='empty'>memory cell '%s' does not exist"
-                       " \u2014 memory/cells/%s.md</div>" % (esc(cell_id or "?"), esc(cell_id or "?")))
+            pan.append("<div class='empty'>memory cell '%s' does not exist \u2014 %s"
+                       " (shown, never hidden)</div>"
+                       % (esc(cell_id or "?"),
+                        "<span class='dim'>%s</span>"
+                        % esc(win_path("memory/cells/%s.md" % (cell_id or "?")))))
 
         pan.append("<h2>Events scoped to this project</h2>")
         pan.append("<p class='sub'>%d of %d logged events &middot; scoped by ctx"
@@ -623,7 +864,7 @@ def build_page():
         for e in pevents[:25]:
             erows.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
                          % (esc(e.get("ts", "?")), esc(e.get("agent", "?")),
-                            esc(e.get("type", "?")), esc(event_ref(e) or "\u2014")))
+                            esc(e.get("type", "?")), event_ref_html(e)))
         pan.append("<table><tr><th>TS</th><th>Agent</th><th>Type</th><th>Ref</th></tr>%s</table>"
                    % ("".join(erows) or "<tr><td colspan='4'>no events scope to this"
                       " project yet</td></tr>"))
@@ -635,7 +876,8 @@ def build_page():
         "ts": ts,
         "artifacts": artifacts_json,
         "board": "\n".join(col_html),
-        "projects": "\n".join(proj_rows) or "<tr><td colspan='6'>no org/projects/*.md files yet</td></tr>",
+        "projects": "\n".join(proj_rows) or "<tr><td colspan='7'>no org/projects/*.md files yet</td></tr>",
+        "notes": "\n".join(note_rows) or "<tr><td colspan='2'>no org/notes/*.md files yet</td></tr>",
         "project_panes": "\n\n".join(proj_panes),
         "pings": "\n".join(pings_html) or '<div class="empty">no open pings</div>',
         "agents": "\n".join(agent_rows) or "<tr><td colspan='7'>no agent files yet</td></tr>",
@@ -782,6 +1024,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .dim { color: var(--dim); font-weight: 400; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   a { color: var(--accent); text-decoration: none; }
+  /* every artifact reference is a link labelled with its full path */
+  a.fp { font-family: Consolas, monospace; font-size: 12px; word-break: break-all; }
+  a.fp:hover { text-decoration: underline; }
+  .prose a.fp, .cid a.fp, .deps a.fp, .fp-src a.fp, .drawer-src a.fp { font-size: 11px; }
+  .fp-src { margin-top: 6px; color: var(--dim); font-size: 11px; }
   /* drawer */
   .drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; }
   .drawer { position: fixed; top: 0; right: -560px; width: 540px; max-width: 92vw; height: 100vh;
@@ -841,10 +1088,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <section class="pane" data-pane="projects">
 <h2>Projects</h2>
-<p class="sub">every project the org works in — click a row for its page: what it is, where it's at, and everything done in it</p>
+<p class="sub">every project the org works in &mdash; click a row for its page: what it is, where it's at, and everything done in it. Every file reference below is a link labelled with its full path.</p>
 <table>
-<tr><th>Project</th><th>Status</th><th>Repo</th><th>Cards</th><th>Builds</th><th>Events</th></tr>
+<tr><th>Project</th><th>Status</th><th>Repo</th><th>Cards</th><th>Builds</th><th>Notes</th><th>Events</th></tr>
 %(projects)s
+</table>
+
+<h2>Deliverables &amp; notes</h2>
+<p class="sub">every written artifact in org/notes/ &mdash; the path opens the file, clicking the row opens it here</p>
+<table>
+<tr><th>File</th><th>Scoped to</th></tr>
+%(notes)s
 </table>
 </section>
 
@@ -859,7 +1113,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <section class="pane" data-pane="roster">
 <h2>Agents</h2>
 <table>
-<tr><th>Name</th><th>Role</th><th>Status</th><th>Scope</th><th>Schedule</th><th>Heartbeat</th></tr>
+<tr><th>File</th><th>Name</th><th>Role</th><th>Status</th><th>Scope</th><th>Schedule</th><th>Heartbeat</th></tr>
 %(agents)s
 </table>
 
@@ -871,7 +1125,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <h2>Decisions</h2>
 <table>
-<tr><th>ID</th><th>Date</th><th>Status</th><th>Title</th></tr>
+<tr><th>File</th><th>Date</th><th>Status</th><th>Title</th></tr>
 %(decisions)s
 </table>
 </section>
@@ -888,7 +1142,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <section class="pane" data-pane="builds">
 <h2>Builds</h2>
 <table>
-<tr><th>ID</th><th>Target</th><th>Agent</th><th>Status</th><th>TS</th></tr>
+<tr><th>File</th><th>Target</th><th>Agent</th><th>Status</th><th>TS</th></tr>
 %(builds)s
 </table>
 </section>
@@ -917,6 +1171,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   try { ARTS = JSON.parse(document.getElementById('artifacts').textContent); } catch (e) {}
   var esc = function (s) { return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+
+  // every artifact reference links to the file itself: /raw/<rel> over http
+  // (worker/serve.py), ../<rel> when the page is opened straight from disk
+  var FILE_MODE = location.protocol === 'file:';
+  function fhref(rel) { return FILE_MODE ? '../' + rel : '/raw/' + rel; }
+  // links generated server-side use raw/<rel>, correct when served at / ;
+  // from dashboard/index.html on disk they must become ../<rel>
+  if (FILE_MODE) {
+    document.querySelectorAll("a.fp[href^='raw/']").forEach(function (a) {
+      a.setAttribute('href', '../' + a.getAttribute('href').slice(4));
+    });
+  }
 
   // ---- tabs ----
   var tabs = document.querySelectorAll('.tab');
@@ -956,7 +1222,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     dtitle.textContent = title || id;
     var html = metaTable(item.meta || {});
     if (item.body) html += '<div class="drawer-body">' + esc(item.body) + '</div>';
-    if (item.path) html += '<div class="drawer-src">source: <a href="../' + esc(item.path) + '" target="_blank">' + esc(item.path) + '</a></div>';
+    if (item.path) html += '<div class="drawer-src">source: <a class="fp" href="' + fhref(item.path) + '" target="_blank">' + esc(item.win || item.path) + '</a></div>';
     dcontent.innerHTML = html;
     drawer.classList.add('open');
     dbk.classList.add('open');
@@ -992,7 +1258,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     dtitle.textContent = rel.split('/').pop();
     var html = metaTable(item.meta || { source: rel });
     if (found) html += '<div class="drawer-body">' + esc(found) + '</div>';
-    html += '<div class="drawer-src">source: <a href="../' + esc(rel) + '" target="_blank">' + esc(rel) + '</a></div>';
+    html += '<div class="drawer-src">source: <a class="fp" href="' + fhref(rel) + '" target="_blank">'
+          + esc((item.win || rel)) + '</a></div>';
     dcontent.innerHTML = html;
     drawer.classList.add('open');
     dbk.classList.add('open');
@@ -1023,6 +1290,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     else if (kind === 'inbox') openInbox(id);
     else if (kind === 'memory') openArt('memory', id, id);
     else if (kind === 'project') openArt('projects', id, id);
+    else if (kind === 'note') openArt('notes', id, id);
   });
 })();
 </script>

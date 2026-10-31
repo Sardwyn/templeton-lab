@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-30T03:42
-focus: "retro-library verdict written — decision-009 logged (Windows desktop, no server, RomM out), verification pass done against upstream source, recommendation = Playnite with SimpleLauncher as challenger, ES-DE and Pegasus out on the PSP/multi-disc discriminator. card-018 is in backlog and blocked on Brad's approval to install. Still waiting on: the swarm rebuild spec (decision-008) and the first real cloud dispatch (card-013)"
+last_heartbeat: 2026-10-31T04:10
+focus: "dashboard linking rule shipped (decision-010): every artifact reference is now a clickable link labelled with its full F:\\Lab\\... path, in both serve and file modes, verified over http — 216 file links, 74 unique, all resolving. Retro verdict stands: Playnite first, SimpleLauncher challenger. Still blocked on Brad: card-018 install approval, deleting the three doubled-name memory cells, the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013)"
 ---
 
 ## Charter

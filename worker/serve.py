@@ -50,7 +50,7 @@ class Handler(BaseHTTPRequestHandler):
                 body = fp.read_bytes()
                 ext = fp.suffix.lower()
                 ctype = {
-                    ".md": "text/markdown; charset=utf-8",
+                    ".md": "text/plain; charset=utf-8",
                     ".json": "application/json; charset=utf-8",
                     ".jsonl": "text/plain; charset=utf-8",
                     ".html": "text/html; charset=utf-8",

@@ -1,0 +1,3 @@
+{"ts": "2026-10-31T03:41", "agent": "qwen", "type": "decision", "decision": "decision-010", "file": "org/decisions/2026-10-31-dashboard-full-path-links.md", "note": "decision-010: every artifact reference in the dashboard is a clickable link labelled with its full Windows path; missing files show dim, prose stays prose"}
+{"ts": "2026-10-31T03:41", "agent": "qwen", "type": "memory_write", "cell": "preference-full-path-links", "action": "write"}
+{"ts": "2026-10-31T03:42", "agent": "qwen", "type": "memory_write", "cell": "decision-010", "action": "write"}
