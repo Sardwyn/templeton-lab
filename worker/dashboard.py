@@ -4,7 +4,7 @@ Generates F:\\Lab\\dashboard\\index.html — self-contained (no external deps,
 works from file:// or via worker/serve.py). Also writes the plain-text
 board to F:\\Lab\\state\\BOARD.md for tools that read markdown.
 
-Tabs (hash-routed): board | projects | pings | roster | builds | events
+Tabs (hash-routed): board | projects | pings | roster | decisions | builds | events
 Projects: `#proj/<id>` opens a per-project page — deliverables (org/notes/*.md),
 cards, builds, decisions (by mention), the project's memory cell, and events
 scoped by ctx refs.
@@ -304,6 +304,9 @@ def load_decisions():
                 "path": f.relative_to(LAB).as_posix(),
             })
             DECISION_BY_ID[fm.get("id", f.stem)] = f.relative_to(LAB).as_posix()
+    # Newest first: decision files are date-named, so filename order is not
+    # ruling order. Same-day rulings fall back to the decision id (zero-padded).
+    out.sort(key=lambda d: (d.get("date", ""), d.get("id", "")), reverse=True)
     return out
 
 
@@ -1067,13 +1070,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
 <h1>Templeton Systems <span style="color:var(--dim);font-weight:400">— Org Dashboard</span></h1>
-<div class="sub">generated %(ts)s &nbsp;·&nbsp; F:\\Lab &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#projects">Projects</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#memory">Memory</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a></div>
+<div class="sub">generated %(ts)s &nbsp;·&nbsp; F:\\Lab &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#projects">Projects</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#decisions">Decisions</a> · <a href="#memory">Memory</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a></div>
 
 <nav class="tabs">
   <a href="#board" class="tab" data-tab="board">Board</a>
   <a href="#projects" class="tab" data-tab="projects">Projects</a>
   <a href="#pings" class="tab" data-tab="pings">Pings</a>
   <a href="#roster" class="tab" data-tab="roster">Roster</a>
+  <a href="#decisions" class="tab" data-tab="decisions">Decisions</a>
   <a href="#memory" class="tab" data-tab="memory">Memory</a>
   <a href="#builds" class="tab" data-tab="builds">Builds</a>
   <a href="#events" class="tab" data-tab="events">Events</a>
@@ -1122,8 +1126,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <tr><th>Agent</th><th>Unread</th></tr>
 %(inboxes)s
 </table>
+</section>
 
+<section class="pane" data-pane="decisions">
 <h2>Decisions</h2>
+<p class="sub">every ruling the org has recorded, newest first — click a row to read it, the path opens the file</p>
 <table>
 <tr><th>File</th><th>Date</th><th>Status</th><th>Title</th></tr>
 %(decisions)s

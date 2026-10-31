@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-31T04:10
-focus: "decision-010 verified in the rendered DOM, not just the served HTML: 38 tables, 233 full-path anchors, decision-010 row live in the roster pane, drawer click opens its file with a working source link. Found and fixed a routing bug in worker/serve.py — any ?v= query string 404'd, which is what made the dashboard tab look empty. Retro verdict stands: Playnite first, SimpleLauncher challenger. Still blocked on Brad: card-018 install approval, deleting the three doubled-name memory cells, the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013)"
+last_heartbeat: 2026-10-31T06:54
+focus: "decision-011 shipped: the dashboard has its own #decisions tab (decisions out of the roster pane) sorted newest first — 010 down to 001, verified live in the rendered DOM. Deleted the three doubled-name memory cells with Brad's OK, audit PASS. card-018 unblocked and claimed: portable Playnite + SimpleLauncher side by side under F:\Lab\trials\, PSP + multi-disc run against the real library. Still blocked on Brad: the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013)"
 ---
 
 ## Charter
