@@ -8,3 +8,6 @@ __pycache__/
 
 # Independent repo (decision-006) — never absorbed into HQ
 swarm/
+
+# Trial installs (approved 2026-10-31, card-018) - portable copies, never committed
+trials/
