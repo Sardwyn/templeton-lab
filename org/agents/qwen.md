@@ -7,7 +7,7 @@ scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scra
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
 last_heartbeat: 2026-10-31T04:10
-focus: "dashboard linking rule shipped (decision-010): every artifact reference is now a clickable link labelled with its full F:\\Lab\\... path, in both serve and file modes, verified over http — 216 file links, 74 unique, all resolving. Retro verdict stands: Playnite first, SimpleLauncher challenger. Still blocked on Brad: card-018 install approval, deleting the three doubled-name memory cells, the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013)"
+focus: "decision-010 verified in the rendered DOM, not just the served HTML: 38 tables, 233 full-path anchors, decision-010 row live in the roster pane, drawer click opens its file with a working source link. Found and fixed a routing bug in worker/serve.py — any ?v= query string 404'd, which is what made the dashboard tab look empty. Retro verdict stands: Playnite first, SimpleLauncher challenger. Still blocked on Brad: card-018 install approval, deleting the three doubled-name memory cells, the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013)"
 ---
 
 ## Charter

@@ -20,7 +20,10 @@ def fresh_dashboard():
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        # Query strings (and any stray fragment) are not part of the route:
+        # `/?v=1` must serve the dashboard, not 404.
+        path = self.path.split("?", 1)[0].split("#", 1)[0]
+        if path in ("/", "/index.html"):
             dash = fresh_dashboard()
             try:
                 dash.build_page()
@@ -35,15 +38,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(body)
-        elif self.path == "/BOARD.md":
+        elif path == "/BOARD.md":
             p = LAB / "state" / "BOARD.md"
             body = p.read_bytes() if p.exists() else b"# Templeton Board\n"
             self.send_response(200)
             self.send_header("Content-Type", "text/markdown; charset=utf-8")
             self.end_headers()
             self.wfile.write(body)
-        elif self.path.startswith("/raw/"):
-            rel = self.path[5:].lstrip("/")
+        elif path.startswith("/raw/"):
+            rel = path[5:].lstrip("/")
             fp = (LAB / rel).resolve()
             lab = LAB.resolve()
             if str(fp).startswith(str(lab)) and fp.is_file():
