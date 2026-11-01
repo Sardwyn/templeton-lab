@@ -6,7 +6,7 @@ owner: brad
 repo: 
 path: 
 memory_cell: project-retro-game-library
-updated_at: 2026-11-01T04:20
+updated_at: 2026-11-01T06:10
 ---
 
 **What it is:** Brad's emulator/ROM library problem. He wants one place to browse
@@ -30,17 +30,32 @@ Nothing is installed.
 **Where the trial landed:** card-018 is **done 2026-11-01**, run as portable copies
 under `F:\Lab\trials\` against the real folders, and
 `org/notes/retro-game-library-options.md` now carries the measured results.
-**Playnite passes the discriminator**: 71 new / 76 total scanned — 33 PSP ISOs plus
-38 PSX games from 52 CHDs with **all 9 multi-disc sets folded into one entry each**,
-IGDB artwork auto-filled, `Playtime`/`PlayCount` written, and a live PSP ISO launch
-through `F:\RetroArch` passed. **SimpleLauncher does not pass it**: 33 PSP tiles and
-**52 PSX tiles, every disc its own game**, no grouping, no generated `.m3u`, and no
-artwork for non-Steam systems — though its live PSP launch also passed and it tracks
-play time. Ruled along the way: decision-012 (reuse Brad's RetroArch), decision-013
-(offline config when an app's UI is invisible to automation), decision-014 (runtime
-carried portably in `trials\`), decision-015 (launch test limited to a PSP ISO).
+**Playnite passes the discriminator**: 76 library entries — 33 PSP ISOs plus 38 PSX
+games from 52 CHDs with **all 9 multi-disc sets folded into one entry each**
+(`MergeRelatedFiles`), text metadata auto-imported on 74 of 76 entries,
+`Playtime`/`PlayCount` written, and a live PSP ISO launch through `F:\RetroArch`
+passed. **SimpleLauncher does not pass it**: 33 PSP tiles and **52 PSX tiles, every
+disc its own game**, no grouping, no generated `.m3u`, no metadata fields for
+non-Steam systems — though its live PSP launch also passed and it tracks play time.
+Ruled along the way: decision-012 (reuse Brad's RetroArch), decision-013 (offline
+config when an app's UI is invisible to automation), decision-014 (runtime carried
+portably in `trials\`), decision-015 (launch test limited to a PSP ISO).
+
+**Correction, 2026-11-01:** artwork is **not** auto-filled. Playnite imported *text*
+metadata automatically, but `Image` is set on **0 of 76** entries and no artwork
+exists beside the roms, so artwork is still its own piece of work. See the disposal
+and corrections section at the end of `org/notes/retro-game-library-options.md`.
+
+**Trial disposal:** Brad said "delete what doesn't matter", so 1,794 MB of app trees,
+portable runtime and installers were removed from `F:\Lab\trials\`. What remains is
+`F:\Lab\trials\evidence\` — 25 files, 2.2 MB, SHA256-listed in
+`F:\Lab\trials\evidence\MANIFEST.txt`: both apps' databases, plain-text dumps of them,
+the measurement summaries and the scripts that derive them. `trials\` is gitignored, so
+the evidence is deliberately untracked. `E:\Sony` was never written to; `F:\RetroArch`
+was never edited, though RetroArch updated its own config and playlists when the trial
+launched a game.
 
 **Next:** the choice is Brad's. Adopting Playnite for real means a non-trial install
 and a decision about his existing LaunchBox data (Playnite imports its *metadata*,
-not its game list). `F:\Lab\trials\` is still on disk and only Brad can delete it;
-`F:\RetroArch` was left untouched.
+not its game list), plus a separate pass to get artwork.
+

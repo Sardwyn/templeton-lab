@@ -264,3 +264,67 @@ produces a `.m3u` for RetroArch. Playnite's trial database has a restore backup 
 `F:\Lab\trials\plbak\`; SimpleLauncher's store is `F:\Lab\trials\simplelauncher\settings.dat`
 with a pre-run backup beside it. `F:\RetroArch` itself was left untouched, and both
 trial apps and every trial game window are closed.
+
+---
+
+## Disposal and corrections (2026-11-01, after the trial closed)
+
+Brad answered the "what happens to `F:\Lab\trials\`" question with **"delete what doesn't
+matter"**, so this entry states what was kept, what was removed, and what the two
+paragraphs above got wrong. Nothing above is rewritten.
+
+### Corrections to what was written above
+
+1. **`F:\Lab\trials\plbak\` never existed.** Brad has no installed Playnite
+   (`C:\Users\sardw\AppData\Roaming\Playnite` does not exist), so there was no library of
+   his to back up and nothing of his was ever at risk. The sentence claiming a restore
+   backup at `plbak\` is false.
+2. **SimpleLauncher persists no game list.** Its `settings.dat` is SQLite with tables
+   `Meta`, `AppSettings`, `EmulatorSettings`, `Favorites`, `PlayHistory`, `Systems`,
+   `SystemPlayTimes` — none of them holds a game or a metadata field. Tiles are re-derived
+   by scanning `SystemFolders` at startup, so the 33 PSP and 52 PSX tiles are UI-side scan
+   results, not stored state. The trial added exactly two rows: `PlayHistory`
+   (`GTA - Chinatown Wars`, `TimesPlayed 1`, `TotalPlayTime 287`) and
+   `SystemPlayTimes` (`Sony PSP` 287).
+3. **Playnite's per-disc grouping is confirmed in the DB, not just in the UI.** Joining
+   `games.db` against `platforms.db`, `emulators.db`, `sources.db` and `scanners.db` gives
+   76 `Game` documents: 33 with PSP roms, 38 with PSX roms holding all 52 disc files, 9 of
+   those entries holding more than one disc (histogram `{1: 29, 2: 6, 3: 1, 4: 2}`), and 5
+   Steam imports. All 85 rom paths resolve to real files. `MergeRelatedFiles: true` is the
+   setting that does it; the PSP folder is bound to the builtin PPSSPP profile and the PSX
+   folder to Beetle PSX HW, both through `F:\RetroArch`.
+4. **Metadata that Playnite imported on its own**, out of 76 entries: description 74,
+   release date 74, genre 73, publisher 72, developer 71, series 66, links 70 — and
+   `Image` set on **0**, so artwork is still a separate job. SimpleLauncher stores no
+   metadata fields at all for non-Steam systems. Playtime on the 5 Steam entries is
+   inherited from Steam, not measured here.
+5. **`F:\RetroArch` was not edited, but RetroArch wrote about itself.** Launching a game is
+   enough for it to rewrite `retroarch.cfg` (11-01 03:49), append to
+   `playlists\builtin\content_history.lpl` (11-01 02:44) and create
+   `playlists\logs\PPSSPP\Grand Theft Auto - Chinatown Wars.lrtl` (11-01 02:58). That is
+   RetroArch's normal behaviour on exit, not a trial setting: no core, BIOS, firmware or
+   save file was added, changed or removed, and `pause_on_window_lost_focus` is still unset
+   (default on). `E:\Sony` really is untouched — no file there has been written since
+   2026-10-31, and the roms were read only.
+
+### What was kept
+
+`F:\Lab\trials\evidence\` — 25 files, 2.2 MB, SHA256-listed in
+`F:\Lab\trials\evidence\MANIFEST.txt`: the Playnite databases and their plain-text dumps,
+Playnite's log and config, SimpleLauncher's before/after stores and the table diff, the
+artwork tree listing, the measurement summaries, and the four scripts that produced them so
+the numbers can be re-derived. `F:\Lab\trials\` is gitignored, so the evidence is
+deliberately **untracked**; it lives on disk and on the local dashboard, not on GitHub.
+
+### What was deleted
+
+`F:\Lab\trials\dl` (368 MB of installers), `F:\Lab\trials\dotnet10` (172 MB portable .NET
+10 runtime), `F:\Lab\trials\playnite` (707 MB app tree), `F:\Lab\trials\simplelauncher`
+(548 MB app tree) — 1,794 MB removed, all re-downloadable. No process was still running
+from `trials\` when they were deleted.
+
+### The decision still Brad's to make
+
+The verdict stands: **Playnite passes the PSP + multi-disc discriminator, SimpleLauncher
+does not.** Adopting it for real — installing it and importing his LaunchBox metadata — is
+Brad's call, not a consequence of the trial.

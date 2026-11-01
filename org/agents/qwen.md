@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-11-01T04:20
-focus: "card-018 is DONE: the trial ran on Brad's real library and the measured verdict is filed in org/notes/retro-game-library-options.md — Playnite passes the PSP + multi-disc discriminator (33 PSP ISOs, 9 multi-disc PSX sets folded into 9 entries, live PSP launch through F:\\RetroArch passed), SimpleLauncher does not (52 per-disc tiles, no grouping, no .m3u) even though its launch also passed. Four rulings recorded (decision-012/013/014/015), audit PASS at 41 cells / 15 decisions, dashboard regenerated. Still blocked on Brad: the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013), and what to do with F:\\Lab\\trials\\ (only he can delete it)"
+last_heartbeat: 2026-11-01T06:30
+focus: "card-018 is DONE and its trial workspace is disposed of: F:\\Lab\\trials\\ now holds only evidence\\ (25 files, 2.2 MB, SHA256-listed in F:\\Lab\\trials\\evidence\\MANIFEST.txt, untracked), 1,794 MB of app trees, portable runtime and installers deleted on Brad's instruction. The measured verdict stands — Playnite passes the PSP + multi-disc discriminator (33 PSP ISOs, 38 PSX games from 52 CHDs with 9 multi-disc sets folded into single entries, live PSP launch through F:\\RetroArch passed), SimpleLauncher does not (52 per-disc tiles, no grouping, no .m3u, no metadata table). Corrections filed as a new dated section: artwork is NOT auto-filled (Playnite set Image on 0 of 76, text metadata on 74) and SimpleLauncher persists no game list at all. Audit PASS at 42 cells / 15 decisions. Still Brad's calls: adopt Playnite for real (install + his LaunchBox metadata), the swarm rebuild spec (decision-008), and the first real cloud dispatch (card-013)"
 ---
 
 ## Charter
