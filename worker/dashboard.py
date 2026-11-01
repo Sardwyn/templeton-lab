@@ -35,7 +35,8 @@ COLUMN_RANK = {name: i for i, name in enumerate(COLUMNS)}
 # Rule: every reference to a card, .md file, note, decision, build log, or
 # memory cell is labelled with its FULL path and links to the file itself.
 
-INDEX_DIRS = ("org", "memory", "state", "worker", "transport", "dashboard")
+INDEX_DIRS = ("org", "memory", "state", "worker", "transport", "dashboard",
+              "trials")
 SKIP_PARTS = {".git", "__pycache__", "swarm", "node_modules", ".venv"}
 LINK_EXTS = {"md", "jsonl", "json", "html", "py", "log", "yaml", "yml", "txt",
              "css", "js"}
@@ -68,7 +69,28 @@ PATH_LIST = sorted(FILE_INDEX)
 
 def win_path(rel):
     r"""The full Windows path used as the label of every artifact link."""
-    return "F:\\Lab\\" + str(rel).replace("/", "\\")
+    s = str(rel).replace("/", "\\")
+    if s.lower().startswith("f:\\lab\\"):
+        s = s[len("f:\\lab\\"):].lstrip("\\")
+    return "F:\\Lab\\" + s
+
+
+def flatten(token):
+    r"""Repo-relative posix form of a written path token, or '' if it is not
+    an F:\Lab path at all (bare ids are handled by rel_of)."""
+    flat = str(token).replace("\\", "/")
+    if flat.lower().startswith("f:/lab/"):
+        flat = flat[len("f:/lab/"):]
+    return flat.lstrip("/")
+
+
+def dir_token(token):
+    r"""A written token that names an existing directory under F:\Lab: shown as
+    a plain path (a directory has no file to open), never as a missing one."""
+    flat = flatten(token).rstrip("/")
+    if flat and (LAB / flat).is_dir():
+        return flat
+    return ""
 
 
 def ref_link(rel):
@@ -84,10 +106,7 @@ def rel_of(token):
     token = str(token).strip().strip("`").strip("'").strip('"')
     if not token:
         return ""
-    flat = token.replace("\\", "/")
-    if flat.lower().startswith("f:/lab/"):
-        flat = flat[len("f:/lab/"):]
-    flat = flat.lstrip("/")
+    flat = flatten(token)
     if flat in FILE_INDEX:
         return flat
     for cand in ("org/cards/%s.md", "org/builds/%s.md", "org/notes/%s.md",
@@ -119,13 +138,15 @@ def ref_cell(token):
         return ref_link(rel)
     if not token:
         return "<span class='dim'>\u2014</span>"
+    if dir_token(token):
+        return "<span class='dir'>%s</span>" % esc(win_path(token))
     if PATHISH_RE.match(str(token)):
         return "<span class='dim'>%s</span>" % esc(win_path(token))
     return "<span class='dim'>%s</span>" % linkify(esc(token))
 
 
 LINK_RE = re.compile(
-    r"F:\\\\Lab\\\\[\w.\-\\]+"                        # a written full path
+    r"F:\\Lab\\(?:[\w.\-\\]*[\w\\])?"                 # a written full path
     r"|[\w\-/]+\.(?:md|jsonl|json|html|py|log|ya?ml|txt|css|js)"   # rel path + ext
     r"|\b(?:card-\d{3}|build-\d{8}[-\w]*|decision-\d{3})\b")       # bare ids
 
@@ -490,13 +511,20 @@ def event_ref(e):
 
 def event_ref_html(e):
     """Ref column as a link: an artifact ref becomes its full-path link, a repo
-    ref links to GitHub, a bare message stays plain text."""
+    ref links to GitHub — and a push ref links to the commit it pushed, so two
+    push rows are distinguishable, a bare message stays plain text."""
     if e.get("repo"):
         repo = str(e["repo"])
-        if "/" in repo:
-            return "<a class='fp' href='https://github.com/%s' target='_blank" \
-                   "' rel='noopener'>%s</a>" % (esc(repo), esc(repo))
-        return esc(repo)
+        sha = str(e.get("commit") or "").strip()
+        if "/" not in repo:
+            return esc(repo)
+        href = "https://github.com/%s" % repo
+        label = repo
+        if sha:
+            href = "%s/commit/%s" % (href, sha)
+            label = "%s @ %s" % (repo, sha[:7])
+        return "<a class='fp' href='%s' target='_blank' rel='noopener'>%s</a>" % (
+            esc(href), esc(label))
     if e.get("message"):
         return esc(str(e["message"]))
     tok = event_ref(e)
@@ -1029,6 +1057,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   a { color: var(--accent); text-decoration: none; }
   /* every artifact reference is a link labelled with its full path */
   a.fp { font-family: Consolas, monospace; font-size: 12px; word-break: break-all; }
+  .dir { font-family: Consolas, monospace; font-size: 12px; word-break: break-all; }
   a.fp:hover { text-decoration: underline; }
   .prose a.fp, .cid a.fp, .deps a.fp, .fp-src a.fp, .drawer-src a.fp { font-size: 11px; }
   .fp-src { margin-top: 6px; color: var(--dim); font-size: 11px; }
