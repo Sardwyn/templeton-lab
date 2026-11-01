@@ -65,6 +65,11 @@ def scan_index():
 
 FILE_INDEX = scan_index()
 PATH_LIST = sorted(FILE_INDEX)
+# a bare filename in prose (dashboard.py) resolves when exactly one file has
+# that name; an ambiguous one stays unresolved rather than guessing
+BASENAME_INDEX = {}
+for _rel in FILE_INDEX:
+    BASENAME_INDEX.setdefault(_rel.rsplit("/", 1)[-1], []).append(_rel)
 
 
 def win_path(rel):
@@ -118,7 +123,14 @@ def rel_of(token):
     if token in DECISION_BY_ID:
         return DECISION_BY_ID[token]
     guess = "memory/cells/%s.md" % token
-    return guess if guess in FILE_INDEX else ""
+    if guess in FILE_INDEX:
+        return guess
+    # a bare filename with no directory, if exactly one file carries that name
+    if "\\" not in token and "/" not in token:
+        hits = BASENAME_INDEX.get(token)
+        if hits and len(hits) == 1:
+            return hits[0]
+    return ""
 
 
 # a token worth printing as a path; anything else is prose and stays prose
@@ -140,9 +152,12 @@ def ref_cell(token):
         return "<span class='dim'>\u2014</span>"
     if dir_token(token):
         return "<span class='dir'>%s</span>" % esc(win_path(token))
-    if PATHISH_RE.match(str(token)):
+    # pathish but not a file: only a single token (no spaces) can be a path —
+    # a note body that happens to start with "card-018" is prose, not a path
+    if PATHISH_RE.match(str(token)) and not re.search(r"\s", str(token)):
         return "<span class='dim'>%s</span>" % esc(win_path(token))
-    return "<span class='dim'>%s</span>" % linkify(esc(token))
+    # prose, not a path: print it as written and linkify whatever is inside
+    return linkify(esc(token))
 
 
 LINK_RE = re.compile(
@@ -501,34 +516,49 @@ def esc(s):
 
 
 def event_ref(e):
-    """Whatever an event points at — card, build, note, decision, cell, repo."""
-    for key in ("card", "card_id", "build_id", "build", "note", "decision",
-                "cell", "repo", "message"):
+    """Whatever an event points at — card, build, file, decision, cell. `note`
+    is the event's own text, so it only counts as a pointer when it is a path."""
+    for key in ("card", "card_id", "build_id", "build", "file", "decision",
+                "cell"):
         if e.get(key):
             return str(e[key])
+    note = str(e.get("note") or "").strip()
+    if note and PATHISH_RE.match(note) and not re.search(r"\s", note):
+        return note
     return ""
 
 
+def event_detail(e):
+    """Free text explaining an event; '' when the note was a path instead."""
+    body = str(e.get("note") or e.get("message") or "").strip()
+    if not body or (PATHISH_RE.match(body) and not re.search(r"\s", body)):
+        return ""
+    if len(body) > 160:
+        body = body[:160].rstrip() + "\u2026"
+    return body
+
+
 def event_ref_html(e):
-    """Ref column as a link: an artifact ref becomes its full-path link, a repo
-    ref links to GitHub — and a push ref links to the commit it pushed, so two
-    push rows are distinguishable, a bare message stays plain text."""
+    """Ref column: the artifact an event points at as a full-path link (a repo
+    ref links to the commit it pushed, so two push rows are distinguishable),
+    followed by the event's own text in muted type. Dim is reserved for a file
+    that genuinely does not exist."""
+    detail = event_detail(e)
+    tail = "<span class='det'>%s</span>" % linkify(esc(detail)) if detail else ""
     if e.get("repo"):
         repo = str(e["repo"])
         sha = str(e.get("commit") or "").strip()
         if "/" not in repo:
-            return esc(repo)
+            return esc(repo) + tail
         href = "https://github.com/%s" % repo
         label = repo
         if sha:
             href = "%s/commit/%s" % (href, sha)
             label = "%s @ %s" % (repo, sha[:7])
         return "<a class='fp' href='%s' target='_blank' rel='noopener'>%s</a>" % (
-            esc(href), esc(label))
-    if e.get("message"):
-        return esc(str(e["message"]))
+            esc(href), esc(label)) + tail
     tok = event_ref(e)
-    return ref_cell(tok) if tok else "\u2014"
+    return (ref_cell(tok) if tok else "\u2014") + tail
 
 
 def md_lite(text):
@@ -1058,6 +1088,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   /* every artifact reference is a link labelled with its full path */
   a.fp { font-family: Consolas, monospace; font-size: 12px; word-break: break-all; }
   .dir { font-family: Consolas, monospace; font-size: 12px; word-break: break-all; }
+.det { color: var(--dim); font-size: 11px; font-weight: 400; }
+.det a.fp { font-size: 11px; }
   a.fp:hover { text-decoration: underline; }
   .prose a.fp, .cid a.fp, .deps a.fp, .fp-src a.fp, .drawer-src a.fp { font-size: 11px; }
   .fp-src { margin-top: 6px; color: var(--dim); font-size: 11px; }
