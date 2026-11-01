@@ -6,8 +6,8 @@ status: on-duty
 scope: "everything that touches the box: builds (llama.cpp-adaptive-kv, UE, scraplet), local tests, org ops (board, git, sync), local research (muLattice); first responder for all cards"
 schedule: "daily driver — on demand, always available"
 activation: "local session on F:\Lab — no activation cost"
-last_heartbeat: 2026-10-31T06:54
-focus: "decision-011 shipped: the dashboard has its own #decisions tab (decisions out of the roster pane) sorted newest first — 010 down to 001, verified live in the rendered DOM. Deleted the three doubled-name memory cells with Brad's OK, audit PASS. card-018 unblocked and claimed: portable Playnite + SimpleLauncher side by side under F:\Lab\trials\, PSP + multi-disc run against the real library. Still blocked on Brad: the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013)"
+last_heartbeat: 2026-11-01T04:20
+focus: "card-018 is DONE: the trial ran on Brad's real library and the measured verdict is filed in org/notes/retro-game-library-options.md — Playnite passes the PSP + multi-disc discriminator (33 PSP ISOs, 9 multi-disc PSX sets folded into 9 entries, live PSP launch through F:\\RetroArch passed), SimpleLauncher does not (52 per-disc tiles, no grouping, no .m3u) even though its launch also passed. Four rulings recorded (decision-012/013/014/015), audit PASS at 41 cells / 15 decisions, dashboard regenerated. Still blocked on Brad: the swarm rebuild spec (decision-008), the first real cloud dispatch (card-013), and what to do with F:\\Lab\\trials\\ (only he can delete it)"
 ---
 
 ## Charter

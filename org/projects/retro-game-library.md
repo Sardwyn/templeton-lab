@@ -6,7 +6,7 @@ owner: brad
 repo: 
 path: 
 memory_cell: project-retro-game-library
-updated_at: 2026-10-30T02:35
+updated_at: 2026-11-01T04:20
 ---
 
 **What it is:** Brad's emulator/ROM library problem. He wants one place to browse
@@ -27,6 +27,20 @@ packs). **ES-DE** is out (multi-disc requires hand-authored `.m3u` folders) and
 **OpenBoxGL** is out (localhost web app, and its PSP definition has no `.chd`).
 Nothing is installed.
 
-**Next:** card-018 — trial Playnite (optionally SimpleLauncher alongside) against
-the real PSP/PSX folders and check multi-disc grouping and PPSSPP launch. It waits
-for Brad's approval to install; nothing gets installed without him.
+**Where the trial landed:** card-018 is **done 2026-11-01**, run as portable copies
+under `F:\Lab\trials\` against the real folders, and
+`org/notes/retro-game-library-options.md` now carries the measured results.
+**Playnite passes the discriminator**: 71 new / 76 total scanned — 33 PSP ISOs plus
+38 PSX games from 52 CHDs with **all 9 multi-disc sets folded into one entry each**,
+IGDB artwork auto-filled, `Playtime`/`PlayCount` written, and a live PSP ISO launch
+through `F:\RetroArch` passed. **SimpleLauncher does not pass it**: 33 PSP tiles and
+**52 PSX tiles, every disc its own game**, no grouping, no generated `.m3u`, and no
+artwork for non-Steam systems — though its live PSP launch also passed and it tracks
+play time. Ruled along the way: decision-012 (reuse Brad's RetroArch), decision-013
+(offline config when an app's UI is invisible to automation), decision-014 (runtime
+carried portably in `trials\`), decision-015 (launch test limited to a PSP ISO).
+
+**Next:** the choice is Brad's. Adopting Playnite for real means a non-trial install
+and a decision about his existing LaunchBox data (Playnite imports its *metadata*,
+not its game list). `F:\Lab\trials\` is still on disk and only Brad can delete it;
+`F:\RetroArch` was left untouched.

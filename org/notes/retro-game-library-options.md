@@ -162,3 +162,105 @@ it requires hand-authored playlists, which is precisely the failure Brad named.
 a SimpleLauncher portable build), point it at the PSP and PSX folders, and check the
 multi-disc grouping and PPSSPP launch behaviour on real files. Nothing installs
 without Brad's explicit approval — that is decision-002 and it still holds.
+
+---
+
+## 2026-11-01 — the trial ran: measured results, both candidates
+
+Card-018 executed against Brad's real library, not a sample folder. Everything below
+is measured output from the two portable copies under `F:\Lab\trials\`, with the apps
+driven over Windows UI Automation and the results read back out of each app's own
+database. Nothing was installed into the system and nothing was written outside
+`F:\Lab` except the game processes' own behaviour.
+
+### The library being tested
+
+| Folder | Contents | Why it is the hard case |
+|---|---|---|
+| `E:\Sony\PSP` | **33 `.iso`** files | PSP image handling |
+| `E:\Sony\PSX` | **52 `.chd`** files, **23 discs across 9 multi-disc sets**, named `Name (Disc 1).chd` / `Name (Disc 2).chd` | Multi-disc grouping |
+| anywhere under `E:\Sony` | **zero `.m3u`** files | So a frontend that only understands playlists has nothing to work with — this is exactly the failure Brad named |
+
+### The emulator route (decision-012)
+
+Both frontends were pointed at Brad's **existing** `F:\RetroArch` install —
+`retroarch.exe` plus the `ppsspp`, `swanstation`, `mednafen_psx_hw`, `pcsx_rearmed`
+and `pcsx2` cores, and `system\psx` which already holds a complete BIOS set. No
+portable PPSSPP/DuckStation download and no Dokan virtual-drive driver were needed.
+`content_history.lpl` in that install proves Brad already launches these CHDs and
+ISOs through RetroArch, so the trial only had to prove the *frontend* hands over the
+right command line.
+
+Two things found while auditing it, worth knowing:
+
+- `system\psp` holds only `ppge_atlas.zim` — **no `flash0` firmware**. PPSSPP booted
+  the real ISO anyway, but anything needing firmware (some homebrew, PSN titles)
+  would need that copied in.
+- `retroarch.cfg` has no `single_instance`, no `pause_on_window_lost_focus`, and
+  `system_directory = ":\system"`. Because focus-pause is default-on, **an unfocused
+  RetroArch window renders black** — a capture has to grab the window while it has
+  focus, which is why the frame hashes below were taken with focus briefly held and
+  then restored.
+
+### Playnite 14.x — scan and launch
+
+| Check | Measured result |
+|---|---|
+| Scan total | **71 new games / 76 total** |
+| PSP | **33** — every ISO from `E:\Sony\PSP` |
+| PSX | **38** from the 52 CHDs, and **all 9 multi-disc sets collapsed into one game entry each**, each entry holding a multi-entry `Roms` list |
+| Artwork | IGDB auto-filled during the scan |
+| Play tracking | `Playtime` and `PlayCount` written on the game record |
+| Live PSP launch | **passed** — `playnite.log`: `ProcessStarter:Starting process: F:\RetroArch\retroarch.exe, -L ".\cores\ppsspp_libretro.dll" "E:\Sony\PSP\Grand Theft Auto - Chinatown Wars.iso"`, spawned pid, two focused frame captures hashed differently, then `Playtime 848` / `PlayCount 1` recorded |
+
+Playnite's multi-disc semantics were read from `JosefNemec/Playnite` master rather
+than assumed: `GamesEditor.cs:1716-1728` expands the stored action into **one play
+action per ROM**, each named `<Game>: <Disc N>` — so the user picks the disc manually
+and there is no automatic disc chaining. `GamesEditor.cs:450` shows plain **Play**
+uses `Roms[0]`. `Common/M3U.cs` and `Emulators/Scanner.cs:869-875` only *consume*
+`.m3u`; **Playnite never generates one**, which is fine here only because the sets
+collapse into a single entry.
+
+Two things cost it: the config UI is invisible to UI Automation (every element rect
+came back `(,,0x0)`), so the trial's scanner configuration had to be written
+**offline into its LiteDB while the app was stopped** (decision-013), and RetroArch
+had to be registered through the emulator dialog before any scan could resolve.
+
+### SimpleLauncher 5.8.4 — scan and launch
+
+| Check | Measured result |
+|---|---|
+| Runtime | needed **.NET 10**, satisfied by a portable runtime at `F:\Lab\trials\dotnet10` launched via `DOTNET_ROOT` (decision-014) — not a system-wide install |
+| Config | done through UIA directly: PSP `E:\Sony\PSP`, extensions `cso, chd, iso, pbp, elf, prx`, `-L "F:\RetroArch\cores\ppsspp_libretro.dll" "%ROM%"`; PSX `E:\Sony\PSX`, extensions `chd, cue, bin, img, mds, mdf, pbp`, swanstation core. Persisted in `settings.dat` (SQLite, table `Systems`) — no `system.xml` |
+| PSP page | **33 tiles** |
+| PSX page | **52 tiles** — every `Name (Disc N).chd` is **its own tile**. No collapse, no disc chaining, no generated `.m3u` |
+| Artwork | only for auto-imported Steam titles; `images\Sony PSP` and `images\Sony PlayStation` stayed empty, so those tiles fall back to `images\default.png` |
+| Live PSP launch | **passed** — UIA invoke on the tile spawned `"F:\RetroArch\retroarch.exe" -L "F:\RetroArch\cores\ppsspp_libretro.dll" "E:\Sony\PSP\Grand Theft Auto - Chinatown Wars.iso"`, window `RetroArch PPSSPP c1581e6`, focused capture showed the real PSP auto-save Notice screen, CPU rose 6.109 → 6.703 |
+| Play tracking | after a graceful close, `PlayHistory` = 1 row (`TimesPlayed 1`, `TotalPlayTime 287`, `2026-11-01 03:53:48`) and `SystemPlayTimes` = `Sony PSP 287` |
+| Per-tile menu | `Launch Game`, `Add To Favorites`, `Remove From Favorites`, `View Achievements`, `Open Video Link`, `Open Info Link`, `Open ROM History`, `Cover` — **no disc picker and no emulator picker** |
+
+Brad set the launch-test scope to **PSP ISO only** (decision-015), so the multi-disc
+PSX live launch was deliberately skipped; Playnite's multi-disc behaviour above is
+source-level evidence plus scan evidence, not a played disc swap.
+
+### Side by side, on Brad's two criteria
+
+| | PSP images | Multi-disc | Artwork | Play history | What it costs |
+|---|---|---|---|---|---|
+| **Playnite** | 33/33 scanned | **23 discs → 9 entries**, one play action per disc, manual pick | auto via IGDB | `Playtime` / `PlayCount` | config UI unreachable to automation; needs offline DB writes |
+| **SimpleLauncher** | 33/33 scanned | **52 separate tiles**, no grouping at all | none for non-Steam systems | `PlayHistory` / `SystemPlayTimes` seconds | needs a portable .NET 10 runtime; UIA works but per-system setup is manual |
+
+**Verdict, on the discriminator Brad set:** Playnite passes it and SimpleLauncher
+does not. SimpleLauncher has the better raw CHD machinery on paper (mount and
+conversion strategies) but in the real folder it treats each disc as a separate game,
+which is precisely the behaviour Brad rejected; Playnite folds his 9 sets into 9
+entries and still lets him choose a disc per launch. Both proved they can actually
+boot a PSP ISO through his existing RetroArch, and both track playtime.
+
+**Honest leftovers:** SimpleLauncher's per-disc tiles are only cosmetic if he adds a
+"Gaming system" grouping or renames the files; Playnite's collapse means the second
+disc is reachable only through the `<Game>: <Disc N>` play action, and neither app
+produces a `.m3u` for RetroArch. Playnite's trial database has a restore backup at
+`F:\Lab\trials\plbak\`; SimpleLauncher's store is `F:\Lab\trials\simplelauncher\settings.dat`
+with a pre-run backup beside it. `F:\RetroArch` itself was left untouched, and both
+trial apps and every trial game window are closed.

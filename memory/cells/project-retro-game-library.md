@@ -2,7 +2,7 @@
 id: project-retro-game-library
 kind: project
 key: retro-game-library
-updated: 2026-10-30T03:42
+updated: 2026-11-01T04:05
 supersedes: []
 confidence: high
 ---
@@ -11,4 +11,4 @@ Project 'retro game library' (org/projects/retro-game-library.md, status active,
 
 Verification pass against upstream source: Playnite (MIT, 14,393 stars, pushed 2026-10-19, release 10.63) is the leader - the shipped PPSSPP profile covers iso/cso/pbp/chd on sony_psp via PPSSPPWindows64.exe, source/Playnite/Common/M3U.cs parses playlists including RetroArch's ':'/'|' suffixes, and Scanner.cs treats .m3u/.cue/.gdi as playlists and groups '(...Disc 1)' style files into one game. Caveat: LaunchBox survives there only as a metadata provider plugin - no library importer - so the game list is re-scanned. SimpleLauncher (GPL-3.0, 266 stars, pushed 2026-10-30, release 5.8.4) is the challenger: PSP searches cso/chd/iso/pbp/elf/prx and ChdMountStrategy + DiscConverter are the deepest disc machinery found (CHD mount on 19 emulators, CHD->ISO, CHD->CUE/BIN, PBP->CUE/BIN), but no automatic m3u generation, no LaunchBox import, metadata limited to RetroAchievements + image packs. ES-DE out (multi-disc is hand-authored .m3u directories; psp = PPSSPP single disc image). Pegasus out (0 m3u code hits, no stable release in two years) despite shipping a LaunchBox data provider. OpenBoxGL out (localhost server architecture fails the ruling; PSP def has no chd).
 
-card-018 exists in backlog to trial Playnite on Brad's real folders - blocked until he approves an install. Nothing installed.
+card-018 existed to trial Playnite + SimpleLauncher on Brad's real folders, and it is **done as of 2026-11-01**. Both ran as portable copies under F:\Lab\trials\ against E:\Sony\PSP (33 ISOs) and E:\Sony\PSX (52 CHDs, 23 discs in 9 multi-disc sets, zero .m3u anywhere). Playnite scanned 71 new / 76 total: 33 PSP + 38 PSX with all 9 sets collapsed into single entries holding multi-entry Roms, IGDB artwork auto-filled, Playtime/PlayCount recorded, and a live PSP ISO launch through F:\RetroArch passed (playnite.log shows retroarch.exe -L ppsspp_libretro.dll + the ISO). SimpleLauncher scanned 33 PSP tiles and 52 PSX tiles - every disc its own tile, no collapse, no disc chaining, no generated .m3u - generated no artwork for non-Steam systems, needed a portable .NET 10 runtime, and its live PSP launch also passed with the same command line (PlayHistory 1 / TotalPlayTime 287). **Verdict: Playnite passes the discriminator, SimpleLauncher does not.** Playnite's multi-disc semantics are source-level: GamesEditor.cs:1716-1728 makes one play action per disc named '<Game>: <Disc N>' (manual pick, plain Play uses Roms[0]) and it never generates an .m3u. F:\RetroArch is unchanged and trials\ is Brad's call to keep or delete.

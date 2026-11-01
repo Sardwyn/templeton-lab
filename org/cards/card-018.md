@@ -1,12 +1,12 @@
 ---
 id: card-018
 title: Trial Playnite against the real PSP and multi-disc folders
-column: in-progress
+column: done
 assignee: qwen
 project: retro-game-library
 depends_on: []
 created_at: 2026-10-30T02:35
-updated_at: 2026-10-31T06:54
+updated_at: 2026-11-01T04:05
 ---
 
 **Unblocked 2026-10-31** — Brad approved the trial (logged as a note event, and in
@@ -36,3 +36,34 @@ Steps (approved 2026-10-31, both apps in scope):
 **Known caveat to verify, not assume:** Playnite has a LaunchBox *metadata* plugin
 but no LaunchBox *library* importer, so the library gets re-scanned and only the
 metadata is carried over.
+
+## Done 2026-11-01 — outcome
+
+Step 4 was narrowed by Brad's ruling (**Decision-015**,
+`F:\Lab\org\decisions\2026-11-01-launch-test-psp-only.md`): one live launch per
+frontend on a PSP ISO, **no multi-disc live launch**. Full measured results, both
+candidates, are in `F:\Lab\org\notes\retro-game-library-options.md`.
+
+| Step | Result |
+|---|---|
+| 1 — portable Playnite in `trials\` | done, no system install |
+| 2 — PSP platform on the real folder | **33 games** from `E:\Sony\PSP` (33 ISOs) |
+| 3 — PSX platform, multi-disc | **38 games** from 52 CHDs, **all 9 multi-disc sets collapsed into one entry each** with a multi-entry `Roms` list |
+| 4 — live PSP launch | **passed** — `playnite.log` shows RetroArch + `ppsspp_libretro.dll` + the ISO, frames hashed differently while focused, `Playtime 848` / `PlayCount 1` recorded |
+| 5 — SimpleLauncher, same folders | PSP **33 tiles**, PSX **52 tiles** — every disc its own tile, **no grouping, no `.m3u`**; live PSP launch **passed** with the same RetroArch command line; `PlayHistory` / `SystemPlayTimes` recorded |
+
+**Verdict:** Playnite passes the discriminator (PSP images + multi-disc without
+hand-built playlists) and SimpleLauncher does not — its raw CHD machinery is stronger
+on paper, but on the real folder it presents each disc as a separate game.
+
+Also ruled along the way: reuse Brad's existing `F:\RetroArch` rather than ship
+emulators (**Decision-012**,
+`F:\Lab\org\decisions\2026-10-31-trial-reuses-existing-retroarch.md`), write config
+offline when an app's config UI is invisible to automation (**Decision-013**,
+`F:\Lab\org\decisions\2026-10-31-playnite-config-offline.md`), and carry required
+runtimes inside `trials\` instead of installing them (**Decision-014**,
+`F:\Lab\org\decisions\2026-11-01-portable-runtime-in-trials.md`).
+
+Nothing of Brad's was disturbed: `F:\RetroArch` untouched, both trial apps and every
+trial game window closed, restore points kept in `F:\Lab\trials\plbak\` and beside
+`F:\Lab\trials\simplelauncher\settings.dat`. What happens to `trials\` is Brad's call.
