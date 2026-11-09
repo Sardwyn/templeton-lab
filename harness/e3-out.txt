@@ -1,0 +1,82 @@
+E3 -- coordinate-disjoint isomorphic families
+prereg sha256 ee8e35b10112541d2504e7ef78d20fd823e8706fdd52b2e9b04cd2f2e7e41da9
+frozen set checked against FREEZE.md:
+hash core.py      8734d335a1481042 ok
+hash measure.py   1c9f076dcaafb274 ok
+hash run.py       5440c370ff6c5ac7 ok
+hash scenarios.py bc8e40d22b65b139 ok
+hash audit.py     e1cd2ee14e996ae1 ok
+hash e1.py        720f90ac910c4824 ok
+
+S0 -- P1 is permutation-invariant (the reason the original E3 cannot stand)
+  worst |_dist(x,y) - _dist(perm(x),perm(y))| over all authored pairs: 0.000e+00
+  S0 PASS (no-op confirmed)
+
+feed: 8 episodes x 3 states, holdout_from=4
+  A cycles 0-3: A0 -> A1 -> A2
+  B cycles 4-7: B0 -> B1 -> B2
+  within-family base distances: A0-A1 0.1250, A1-A2 0.1625, A0-A2 0.1625
+  nearest cross-family base distance: 1.0000
+  B = perm(A) + (0.0, 0.0, 2.0, 2.0) with perm=(2, 3, 0, 1)
+
+--- separate reading ---
+STRUCTURE
+  states 24  episodes 8  classes 6  sizes [4, 4, 4, 4, 4, 4]
+  gap ratio 28.924  lo 0.004432  hi 0.128199  cut 0.066316
+  class -> regions: {0: ['A0'], 1: ['A1'], 2: ['A2'], 3: ['B0'], 4: ['B1'], 5: ['B2']}
+  families per class: {0: ['A'], 1: ['A'], 2: ['A'], 3: ['B'], 4: ['B'], 5: ['B']}
+  class ids at authored bases: A [0, 1, 2]  B [3, 4, 5]
+PREDICTION during delivery (descriptive only; not an E3 claim)
+  asked 6  declined 6  hits 6  accuracy 1.000
+P1 within-family prediction after the feed
+  A0,A1 -> A2   got 2  hit
+  A1,A2 -> A0   got None  MISS
+  A2,A0 -> A1   got 1  hit
+  B0,B1 -> B2   got 5  hit
+  B1,B2 -> B0   got None  MISS
+  B2,B0 -> B1   got 4  hit
+  P1 FAIL
+P2 transfer under the planted correspondence
+  transition 0: A pred 2 (want 2); B pred 5 (want 5); transfer
+  transition 1: A pred None (want 0); B pred None (want 3); no transfer
+  transition 2: A pred 1 (want 1); B pred 4 (want 4); transfer
+  transfers 2/3
+OUTCOME CHECK
+  classes at derived cut 6; three paired classes: False
+  no cut up to the largest pairwise distance yields three paired classes
+  first cross-family merge at tau 0.997273: 2 classes, 0 span both families
+
+--- joined reading ---
+STRUCTURE
+  states 24  episodes 1  classes 6  sizes [4, 4, 4, 4, 4, 4]
+  gap ratio 28.924  lo 0.004432  hi 0.128199  cut 0.066316
+  class -> regions: {0: ['A0'], 1: ['A1'], 2: ['A2'], 3: ['B0'], 4: ['B1'], 5: ['B2']}
+  families per class: {0: ['A'], 1: ['A'], 2: ['A'], 3: ['B'], 4: ['B'], 5: ['B']}
+  class ids at authored bases: A [0, 1, 2]  B [3, 4, 5]
+PREDICTION during delivery (descriptive only; not an E3 claim)
+  asked 9  declined 3  hits 8  accuracy 0.889
+P1 within-family prediction after the feed
+  A0,A1 -> A2   got 2  hit
+  A1,A2 -> A0   got 0  hit
+  A2,A0 -> A1   got 1  hit
+  B0,B1 -> B2   got 5  hit
+  B1,B2 -> B0   got 3  hit
+  B2,B0 -> B1   got 4  hit
+  P1 PASS
+P2 transfer under the planted correspondence
+  transition 0: A pred 2 (want 2); B pred 5 (want 5); transfer
+  transition 1: A pred 0 (want 0); B pred 3 (want 3); transfer
+  transition 2: A pred 1 (want 1); B pred 4 (want 4); transfer
+  transfers 3/3
+OUTCOME CHECK
+  classes at derived cut 6; three paired classes: False
+  no cut up to the largest pairwise distance yields three paired classes
+  first cross-family merge at tau 0.997273: 2 classes, 0 span both families
+
+E3 result by reading
+  separate outcome (d); classes 6; transfers 2/3
+  joined   outcome (c); classes 6; transfers 3/3
+The separate reading is primary (e3-prereg.md); the joined reading is reported but its splices add cross-family edges.
+
+E3 FAIL (outcome d)
+Only outcome (a) passes. d is a classified failure, not a bug: v0.1 groups by state proximity, not by delta shape.

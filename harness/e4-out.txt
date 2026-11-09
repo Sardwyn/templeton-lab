@@ -1,0 +1,71 @@
+E4 -- cut scaling and chance-ratio distribution
+prereg sha256 aa3ffae5e2806dacda5c438d397cb95ebfa3067019f09e32fdd6fa87b10166ab
+frozen set checked against FREEZE.md:
+hash core.py      8734d335a1481042 ok
+hash measure.py   1c9f076dcaafb274 ok
+hash run.py       5440c370ff6c5ac7 ok
+hash scenarios.py bc8e40d22b65b139 ok
+hash audit.py     e1cd2ee14e996ae1 ok
+hash e1.py        720f90ac910c4824 ok
+
+grid: n [18, 50, 120, 300, 500] x dim [4, 8, 16], R=50 random + 50 structured per cell
+GAP=2.00  MIN_SIDE=2  EPS=1e-12  D=0.12  jitter=+/-0.01
+
+verification: 30 cell samples matched the frozen Harness exactly
+
+RANDOM FEEDS -- chance nearest-neighbour ratio
+n    dim    median      p90      p95      p99      max     FP  FPfrac   med cut
+18   4      1.3224   1.5459   1.6492   1.7529   1.7891      0   0.000       n/a
+18   8      1.1648   1.2513   1.2975   1.3520   1.3954      0   0.000       n/a
+18   16     1.1135   1.1717   1.1922   1.3026   1.3556      0   0.000       n/a
+50   4      1.2413   1.4604   1.5824   1.6925   1.7161      0   0.000       n/a
+50   8      1.1483   1.2555   1.3190   1.3495   1.3609      0   0.000       n/a
+50   16     1.0960   1.1748   1.2008   1.2393   1.2660      0   0.000       n/a
+120  4      1.2652   1.4305   1.5320   1.8880   2.0993      1   0.020  0.034733
+120  8      1.1290   1.2072   1.2732   1.3384   1.3411      0   0.000       n/a
+120  16     1.0875   1.1456   1.1752   1.2132   1.2414      0   0.000       n/a
+300  4      1.2717   1.4624   1.5669   1.6925   1.6978      0   0.000       n/a
+300  8      1.1247   1.2319   1.2657   1.3536   1.3633      0   0.000       n/a
+300  16     1.0955   1.1603   1.1719   1.1844   1.1908      0   0.000       n/a
+500  4      1.2408   1.4442   1.5292   1.7875   1.8363      0   0.000       n/a
+500  8      1.1409   1.2905   1.3338   1.3637   1.3803      0   0.000       n/a
+500  16     1.0857   1.1505   1.1887   1.2516   1.2555      0   0.000       n/a
+
+STRUCTURED FEEDS -- authored separation
+n    dim    med ch  gap fnd   cut in   class2   med cut  med width  not sep
+18   4      1.3403    0.040    0.020    0.000  0.006138     0.1056        0
+18   8      1.2270    0.000    0.000    0.000       n/a     0.1077        0
+18   16     1.1592    0.000    0.000    0.000       n/a     0.1093        0
+50   4      1.2913    0.000    0.000    0.000       n/a     0.1043        0
+50   8      1.1900    0.000    0.000    0.000       n/a     0.1066        0
+50   16     1.1461    0.000    0.000    0.000       n/a     0.1086        0
+120  4      1.3021    0.020    0.000    0.000  0.000686     0.1036        0
+120  8      1.2173    0.000    0.000    0.000       n/a     0.1061        0
+120  16     1.1155    0.000    0.000    0.000       n/a     0.1081        0
+300  4      1.2670    0.040    0.000    0.000  0.000434     0.1026        0
+300  8      1.2192    0.000    0.000    0.000       n/a     0.1053        0
+300  16     1.1094    0.000    0.000    0.000       n/a     0.1073        0
+500  4      1.3160    0.000    0.000    0.000       n/a     0.1020        0
+500  8      1.1550    0.000    0.000    0.000       n/a     0.1052        0
+500  16     1.1165    0.000    0.000    0.000       n/a     0.1071        0
+
+POOLED FALSE-POSITIVE RATE (random feeds)
+  1 / 750 = 0.0013
+  95% Wilson upper bound: 0.0075  (pass bar <= 0.05)
+  cells with per-cell FPR > 0.10: none
+
+TREND -- median and p95 chance ratio
+  by n (random, pooled over dim):
+    n=18  median 1.1668  p95 1.4934
+    n=50  median 1.1550  p95 1.3862
+    n=120 median 1.1383  p95 1.3887
+    n=300 median 1.1525  p95 1.4298
+    n=500 median 1.1446  p95 1.3816
+  by dim (random, pooled over n):
+    dim=4  median 1.2722  p95 1.5992
+    dim=8  median 1.1443  p95 1.3079
+    dim=16 median 1.0951  p95 1.1877
+  cells with per-cell p95 >= GAP: none
+
+E4 FAIL
+  power condition failed in 15 cell(s): [(18, 4, 0.02), (18, 8, 0.0), (18, 16, 0.0), (50, 4, 0.0), (50, 8, 0.0), (50, 16, 0.0), (120, 4, 0.0), (120, 8, 0.0), (120, 16, 0.0), (300, 4, 0.0), (300, 8, 0.0), (300, 16, 0.0), (500, 4, 0.0), (500, 8, 0.0), (500, 16, 0.0)]

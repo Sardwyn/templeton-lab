@@ -6,7 +6,7 @@ assignee: qwen
 project: emergent-harness
 depends_on: [card-020]
 created_at: 2026-11-09T01:28
-updated_at: 2026-11-09T02:04
+updated_at: 2026-11-09T02:55
 ---
 
 Each rung is pre-registered before its run and each is allowed to fail. One
@@ -59,7 +59,7 @@ return, not a repaired pass. A non-vacuous E2b needs a non-repeating stream or
 a successor depending on more than K. See `harness/e2-prereg.md` (post-hoc
 diagnosis).
 
-## E3 — redefined, pending ruling (not run)
+## E3 — DONE (FAIL, outcome d, 2026-11-09)
 
 The original E3 is a no-op under P1: mean absolute deviation is
 permutation-invariant, so a pure component permutation changes nothing. The
@@ -67,32 +67,62 @@ redefinition uses coordinate-disjoint isomorphic families (triangle in
 components 0,1 vs the same triangle in 2,3, separated by > the cut). Outcomes:
 (a) 3 classes at the same cut = PASS; (b) 3 only after raising the cut = cut
 shopping; (c) 6 classes but prediction transfers under the planted permutation;
-(d) 6 classes, no transfer. Only (a) passes. Expected (c) or (b): v0.1 has no
-operator over delta shape, only over state proximity. See `harness/e3-prereg.md`.
+(d) 6 classes, no transfer. Only (a) passes.
 
-**Open ruling:** accept the redefinition and its expected negative, or drop E3
-rather than run it in a form whose pass condition is unreachable.
+Result: **E3 FAIL (outcome d)** in the primary separate reading, run by
+`harness/e3.py` -> `harness/e3-out.txt`. S0 confirms the no-op exactly (worst
+distance change under component permutation 0.000e+00). Separate reading: 24
+states, 6 classes `[4,4,4,4,4,4]`, gap 28.924, cut 0.066316; every class holds
+one authored region (A0/A1/A2/B0/B1/B2), so there are 6 classes not 3; P1 4/6
+(the two cycle-closing transitions are declined at episode boundaries); transfers
+2/3. The joined reading gets P1 6/6 and transfers 3/3 (outcome c), but it is not
+primary and its splices add cross-family edges. No cut up to the largest pairwise
+distance yields three paired classes; the first cross-family merge is at tau
+0.997273 and gives 2 classes with 0 spanning both families.
 
-## E4 — pre-registered, pending ruling (not run)
+This is a classified failure, not a bug: v0.1 groups by state proximity, not by
+delta shape, so an isomorphic triangle moved into a disjoint coordinate subspace
+becomes a separate set of classes and the planted correspondence does not
+transfer through the cut. A reader-side joined-label mapping correction was
+applied before the recorded run; the separate verdict was unchanged.
+
+## E4 — DONE (FAIL, 2026-11-09)
 
 n in {18, 50, 120, 300, 500}, dim in {4, 8, 16}, 50 independent random and 50
-independent structured feeds per cell. Report median / p90 / p95 / p99 / max
-chance NN ratio, derived cut, cut-inside-authored-interval, and false-positive
-rate. Pass: pooled 95% Wilson upper bound on FPR <= 0.05 and per-cell structured
-power >= 0.80. Per-cell FPR is descriptive (flag > 0.10), not a pass criterion.
-The 1.987 vs 2.0 margin is the thing under test. See `harness/e4-prereg.md`.
+independent structured feeds per cell. Pass: pooled 95% Wilson upper bound on
+FPR <= 0.05 and per-cell structured power >= 0.80. Per-cell FPR is descriptive
+(flag > 0.10), not a pass criterion. The 1.987 vs 2.0 margin is the thing under
+test. See `harness/e4-prereg.md`.
 
-**Open ruling:** pooled FPR band (recommended) vs per-cell FPR at alpha 0.05
-(needs ~60 feeds/cell and is much stricter).
+Result: **E4 FAIL on power**, run by `harness/e4.py` -> `harness/e4-out.txt` +
+`e4.json`. The null side is clean: pooled FPR 1/750 = 0.0013, Wilson upper bound
+0.0075, no cell above 0.10, no cell with p95 chance ratio >= GAP. Chance ratios
+do not grow with n and fall with dimension (median 1.2722 at dim 4 -> 1.0951 at
+dim 16). The signal side fails everywhere: structured cut-inside-authored-
+interval is 0.02 at n=18 dim=4 and 0.00 in the other 14 cells, against a 0.80
+bar.
 
-## E5 — protocol frozen, feed pending
+Cause, identified before the run: the structured feed has exactly ONE
+between-cluster nearest-neighbour distance, while `MIN_SIDE=2` requires two
+observations on each side of a candidate gap. A single cross-cluster distance can
+never open an admissible gap at the true separation, so `gap()` sometimes fires on
+a spurious within-cluster gap (gap-found 0.00-0.04) with a cut far below the
+authored interval (~0.0004-0.0061 against a width of ~0.10). E4 therefore does
+not show that the cut survives scale; it shows the cut's validity interval is
+empty on this two-point-per-cluster signal. E2 and E3 are not retroactively
+passed or failed.
+
+## E5 — runner frozen, feed pending
 
 Brad writes one JSON feed (states, errors, episode boundaries, holdout, probes,
-claims) without describing the generator. `harness/e5.py` re-checks the freeze,
-prints and records the feed hash, runs it unchanged, and publishes every row,
-including failures and n/a. No tuning after; a change is E5b with a new feed
+claims) without describing the generator. `harness/e5.py` is written and frozen
+before any feed exists (sha256 `d2b996408a24faa15aed6761e0939565d3d0e4720707c4022661db3dd13b52c7`,
+recorded in `harness/e5.py.sha256`). It re-checks every hash in `FREEZE.md`,
+prints and records the feed hash, runs the feed unchanged, and publishes every
+row, including failures and n/a. No tuning after; a change is E5b with a new feed
 hash. The claim vocabulary is fixed in `harness/e5-prereg.md`. E5 is the only
-rung that removes the feed's author. See `harness/e5-prereg.md`.
+rung that removes the feed's author. The feed goes in `harness/feeds/` (see
+`harness/feeds/README.md`).
 
 ## Discipline
 
@@ -103,4 +133,6 @@ modules; it may not edit them.
 
 **Artifacts:** `harness/FREEZE.md`, `harness/e2-prereg.md`,
 `harness/e3-prereg.md`, `harness/e4-prereg.md`, `harness/e5-prereg.md`,
-`harness/e1b.py`, `harness/e1b-out.txt`.
+`harness/e1b.py`, `harness/e1b-out.txt`, `harness/e3.py`, `harness/e3-out.txt`,
+`harness/e4.py`, `harness/e4-out.txt`, `harness/e4.json`, `harness/e5.py`,
+`harness/e5.py.sha256`, `harness/feeds/README.md`.

@@ -6,7 +6,7 @@ owner: brad
 repo:
 path: F:\Lab\harness
 memory_cell: project-emergent-harness
-updated_at: 2026-11-09T02:04
+updated_at: 2026-11-09T02:45
 ---
 
 **What it is:** a minimal system fed only state (numbers), difference,
@@ -51,9 +51,9 @@ attacks a different source of false confidence at each rung.
 |---|---|---|
 | **E1b** | Is the rotation claim true for the graph a finite stream actually supports? | **DONE, PASS 2026-11-09** -- B1 cyclic edge multiset, B2 presence degrees, B3 two seam violations, B4 seam-only prediction drop. E1 itself stays FAIL. |
 | **E2** | Can recurrence predict through fixed-lag interleaving beyond a raw-prefix nearest-neighbour lookup with the same information? | **FAIL 2026-11-09** — structure and the harness's own prediction pass, but B1 ties at 1.000; the feed is periodic at K=3. See `harness/e2-prereg.md`. |
-| **E3** | Does relational structure survive a coordinate transformation? | redefined and **FROZEN 2026-11-09** (original was a no-op under P1); expected negative, not yet run |
-| **E4** | Does the cut survive n up to 500 and 16 dimensions, or is 1.987-vs-2.0 a small-n accident? | **FROZEN 2026-11-09**, not yet run; **cross-cutting validity test** |
-| **E5** | Can the results survive a feed authored by Brad, not by the system's author? | protocol frozen, feed pending |
+| **E3** | Does relational structure survive a coordinate transformation? | **FAIL 2026-11-09 (outcome d)** — 6 classes, no transfer in the primary separate reading; joined reading transfers 3/3 (outcome c). v0.1 groups by state proximity, not delta shape. See `harness/e3-prereg.md`. |
+| **E4** | Does the cut survive n up to 500 and 16 dimensions, or is 1.987-vs-2.0 a small-n accident? | **FAIL 2026-11-09 on power** — null side clean (FPR 1/750, Wilson upper 0.0075), but structured cut-inside is 0.00-0.02 against a 0.80 bar. **Cross-cutting validity test.** See `harness/e4-prereg.md`. |
+| **E5** | Can the results survive a feed authored by Brad, not by the system's author? | **runner frozen 2026-11-09** (hash recorded), feed pending Brad in `harness/feeds/` |
 
 E4 runs in its numbered position but its result is applied to how E2 and E3 are
 read. A failure in E4 does not retroactively pass or fail them; it changes what
@@ -64,6 +64,21 @@ so a raw 3-prefix recurs with the same successor and the baseline ties at 1.000.
 The harness's structure and its own prediction were perfect; recurrence simply
 added nothing over raw lookups on that feed. That is the negative the rung
 existed to be able to return.
+
+E3 failed as outcome (d): the same triangle translated into a disjoint pair of
+coordinates became six classes, not three, and the planted correspondence did not
+transfer through the derived cut (2/3 in the separate reading). The joined
+reading restores the cycle-closing transitions and transfers 3/3, but it is not
+primary. The negative is definitional: v0.1 has an operator over state proximity,
+not over delta shape.
+
+E4 failed on power while passing the null: the chance ratio does not grow with n
+and shrinks with dimension (median 1.272 at dim 4, 1.095 at dim 16), so the
+1.987-vs-2.0 margin is not a small-n artifact. But the structured feed carries
+only one between-cluster nearest-neighbour distance, and `MIN_SIDE=2` needs two
+on each side of the cut, so the derived cut cannot sit inside the authored
+separation (power 0.00-0.02). E4 therefore does not validate the cut at scale; it
+shows the cut's validity interval is empty on a two-point-per-cluster signal.
 
 ## Three definitional findings (ruled 2026-11-09)
 
@@ -103,4 +118,7 @@ instead. E5 is the only rung that removes the feed's author.
 `harness/README.md`, `harness/RESULTS.md`, `harness/FREEZE.md`,
 `harness/e1-prereg.md`, `harness/e1b.py`, `harness/e1b-out.txt`,
 `harness/e2-prereg.md`, `harness/e3-prereg.md`, `harness/e4-prereg.md`,
-`harness/e5-prereg.md`, `harness/out.txt`, `harness/sweep.txt`.
+`harness/e5-prereg.md`, `harness/e3.py`, `harness/e3-out.txt`, `harness/e4.py`,
+`harness/e4-out.txt`, `harness/e4.json`, `harness/e5.py`,
+`harness/e5.py.sha256`, `harness/feeds/README.md`, `harness/out.txt`,
+`harness/sweep.txt`.

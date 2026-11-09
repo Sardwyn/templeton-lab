@@ -153,6 +153,87 @@ the negative it allowed: on this feed, recurrence adds nothing over raw-prefix
 nearest neighbour. A non-vacuous E2b would need a non-repeating stream, or a
 successor that depends on more than `K`.
 
+## E3 — coordinate-disjoint isomorphic families (pre-registered, `e3-prereg.md`)
+
+Run: `python harness/e3.py` → `e3-out.txt`. Result: **E3 FAIL (outcome d)** in the
+primary separate reading.
+
+The original E3 (permute the components) is a no-op under P1, and the runner
+measures that first: the worst change in any pairwise distance under a component
+permutation is exactly `0.000e+00` (S0 PASS). The non-vacuous replacement puts
+the same triangle `{A0, A1, A2}` in components 0–1 and a translated, permuted
+copy `{B0, B1, B2}` in components 2–3, separated by 1.0.
+
+| claim | separate (primary) | joined |
+|---|---|---|
+| classes at the derived cut | **6** `[4,4,4,4,4,4]`, gap 28.924, cut 0.066316 | 6, same gap and cut |
+| one authored region per class | PASS — A0/A1/A2, B0/B1/B2 | PASS |
+| P1 within-family prediction | **4/6** — both cycle-closing transitions declined | 6/6 |
+| P2 transfer under planted correspondence | **2/3** | 3/3 |
+| three paired classes at the derived cut | **no** | no |
+
+No cut up to the largest pairwise distance yields three paired classes; the first
+cross-family merge is at tau 0.997273 and produces 2 classes, neither spanning
+both families. Only outcome (a) passes. This is a classified failure: v0.1 groups
+by state proximity, not by delta shape, so an isomorphic structure moved into a
+disjoint coordinate subspace is not recognised as the same structure and the
+planted correspondence does not transfer through the cut. The joined reading's
+3/3 is reported but not primary; joining adds the cross-episode edges the separate
+reading lacks. A reader-side joined-label mapping correction was applied before
+the recorded run and did not change the separate verdict.
+
+## E4 — cut scaling and the chance distribution (pre-registered, `e4-prereg.md`)
+
+Run: `python harness/e4.py` → `e4-out.txt`, `e4.json`. Result: **E4 FAIL on
+power.** 1500 feeds: n ∈ {18, 50, 120, 300, 500} × dim ∈ {4, 8, 16} × 50 random
++ 50 structured. The inlined measurement was verified against the frozen
+`Harness` on all 30 cell samples before the tables were accepted.
+
+**Null side — clean.**
+
+| | value |
+|---|---|
+| pooled false positives | 1 / 750 = 0.0013 |
+| 95 % Wilson upper bound | **0.0075** (pass bar ≤ 0.05) |
+| cells with per-cell FPR > 0.10 | none |
+| cells with p95 chance ratio ≥ GAP | none |
+
+The chance ratio does **not** grow with n and falls with dimension: pooled median
+1.1668 at n=18 → 1.1446 at n=500; 1.2722 at dim=4 → 1.0951 at dim=16; pooled p95
+1.5992 at dim=4 → 1.1877 at dim=16. The 1.987-vs-2.0 margin is not a small-n
+artifact.
+
+**Signal side — fails.** Structured power (cut strictly inside the authored
+between/within interval) is 0.02 at n=18 dim=4 and 0.00 in the other 14 cells,
+against the 0.80 bar. Gap-found is 0.00–0.04 and the two-class rate is 0.00 in
+every cell; when a gap is found its cut is 0.0004–0.0061, far below the ~0.10
+authored interval.
+
+Cause, identified before the run: the structured feed has exactly **one**
+between-cluster nearest-neighbour distance, while `MIN_SIDE = 2` requires two
+observations on each side of a candidate gap. A single cross-cluster distance can
+never open an admissible gap at the true separation; `gap()` occasionally fires on
+a spurious within-cluster gap instead. E4 therefore does not show the cut
+survives scale — it shows the cut's validity interval is empty on a
+two-point-per-cluster signal. That is a property of the frozen test crossed with
+the frozen mechanism, not a bug repaired in the runner. It does not retroactively
+pass or fail E2 or E3; it lowers what their passes are worth.
+
+## E5 — blind feed (runner frozen, feed pending)
+
+E5 has not run. The protocol and claim vocabulary are frozen in `e5-prereg.md`,
+and the runner is written and hashed before any feed exists:
+`e5.py` sha256 `d2b996408a24faa15aed6761e0939565d3d0e4720707c4022661db3dd13b52c7`,
+recorded in `e5.py.sha256`. The runner re-checks every `FREEZE.md` hash, prints
+and records the feed hash, validates the feed without repairing it, runs each
+requested reading through `run_one`, and publishes every claim row plus the four
+E5 checks (`gap_ratio_min`, `cut_inside`, `answered_min`, `declined_max`). A
+malformed feed or an unregistered claim is a failed run, not a skipped one.
+
+Brad's feed goes in `harness/feeds/` (see its README); the runner is invoked
+once, unchanged, and the output is published including failures. This is the
+only rung that removes the feed's author.
+
 ## Evidence file
 
 `evidence.json` holds `priors`, `thresholds` (reader-side: accuracy 0.80, fan 3,

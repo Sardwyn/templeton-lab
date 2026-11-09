@@ -84,10 +84,15 @@ audit.py      forbidden-vocabulary, no-retained-structure, no-knob checks
 FREEZE.md     the frozen mechanism: hashes, parameters, P0-P6, reporting rules
 e1.py         the first follow-up: order test, against a frozen core hash
 e1b.py        the restatement of E1's rotation claims (post-hoc, frozen)
-e2-prereg.md  fixed-lag interleaving + same-information baseline (pending)
-e3-prereg.md  coordinate-disjoint families + the four outcomes (pending)
-e4-prereg.md  cut scaling and chance-ratio distribution (pending)
+e2-prereg.md  fixed-lag interleaving + same-information baseline (FAIL on P2)
+e3-prereg.md  coordinate-disjoint families + the four outcomes (FAIL, outcome d)
+e4-prereg.md  cut scaling and chance-ratio distribution (FAIL on power)
 e5-prereg.md  blind-feed protocol and claim vocabulary (frozen, feed pending)
+e2.py         E2 runner            e2-out.txt   E2 output
+e3.py         E3 runner            e3-out.txt   E3 output
+e4.py         E4 runner            e4-out.txt   E4 output; e4.json per-feed records
+e5.py         E5 runner (frozen before any feed; hash in e5.py.sha256)
+feeds/        Brad's blind feed goes here; format in e5-prereg.md
 out.txt       full run output (20 scenario x reading runs)
 sweep.txt     the same, plus the cut-moved report
 RESULTS.md    what the run measured, three findings, the E1 outcome
@@ -115,9 +120,9 @@ allowed to fail.
 |---|---|---|
 | E1b | Is rotation invariance true for the graph a finite stream supports? | **PASS** — cyclic edges and presence degrees invariant; two seam violations; only the seam position misses |
 | E2 | Can recurrence predict through fixed-lag interleaving beyond a same-information raw-prefix NN? | **FAIL** — structure and the harness's own prediction pass, but B1 ties at 1.000; the feed is periodic at K=3 |
-| E3 | Does relational structure survive a coordinate transformation? | redefined (original is a no-op under P1), pending ruling |
-| E4 | Does the cut survive n=500 and dim=16, or is 1.987-vs-2.0 a small-n accident? | pre-registered, pending acceptance-band ruling; cross-cutting |
-| E5 | Can the result survive a feed authored by Brad? | protocol frozen, feed pending |
+| E3 | Does relational structure survive a coordinate transformation? | **FAIL (outcome d)** — 6 classes, no transfer in the primary separate reading; joined reading transfers 3/3 (outcome c); v0.1 groups by proximity, not delta shape |
+| E4 | Does the cut survive n=500 and dim=16, or is 1.987-vs-2.0 a small-n accident? | **FAIL on power** — null side clean (FPR 1/750, Wilson upper 0.0075) but structured cut-inside 0.00-0.02 vs a 0.80 bar; cross-cutting |
+| E5 | Can the result survive a feed authored by Brad? | **runner frozen** (hash in `e5.py.sha256`), feed pending in `feeds/` |
 
 A pass on E1b does not make E1 a pass. E1's original claim set stays FAIL on
 the record; E1b closes the definition, and the two-ended-stream artifact is now
