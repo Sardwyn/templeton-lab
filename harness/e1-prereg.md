@@ -123,3 +123,86 @@ python harness/e1.py            # writes e1-out.txt, appends nothing else
 `e1.py` records: the three orders' partitions, sizes, errors, degrees,
 anticipation rows, and the C1–C4 verdicts. `core.py`'s hash is re-checked at
 the top of the run and the run aborts if it differs from the frozen value.
+
+---
+
+# Amendment E1b — 2026-11-09, after E1 ran
+
+**Status: post-hoc restatement. This is not a new blind test and it does not
+turn E1's FAIL into a PASS.** E1's original C1–C4 stay on the record and its
+verdict stays FAIL. E1b exists because C2 failed for a reason that was not the
+thing under test, and the failure would otherwise be open to two dishonest
+readings: "the classes encode position" or "it is only a bookkeeping detail".
+Neither is established. The claim is restated precisely and measured once.
+
+E1's own diagnostic already established the mechanism: the directed-edge
+multiset is **identical as a cycle** (return edge added) and differs only as a
+finite sequence. A stream has one first observation with no predecessor and one
+last with no successor; rotating the episode order moves which class carries
+each missing edge. The restatement below separates the invariant part from the
+artifact part. It was written before `e1b.py` was created and its expected
+values are already known from E1's diagnostic, which is exactly why it is
+labelled an amendment rather than a prediction.
+
+## New claims
+
+**B1 — circular edge invariance.** Up to a bijective relabelling of class ids,
+the directed-edge multiset of `cycle` and `rotate`, **including the return edge
+`(last class → first class)`**, is identical. This is the graph object a finite
+stream actually supports. PASS if the sorted edge multisets are equal after the
+relabelling.
+
+**B2 — presence-degree invariance.** Up to the same relabelling, every class has
+the same **set** of successor classes and the same **set** of predecessor
+classes. Transition **counts** are not claimed to be invariant: the linearisation
+drops one cyclic edge, so at most one class loses one inbound count and one
+class loses one outbound count. The exact count delta is reported per class.
+PASS if every successor set and predecessor set matches after relabelling, and
+the count deltas are confined to the single linearisation edge (no class has a
+presence difference).
+
+This is deliberately weaker than the original C2 and stronger than "the edges
+are equal as a cycle": it says the **neighbourhoods** survive rotation even
+though the counts cannot.
+
+**B3 — grouped seam accounting.** In the `grouped` order, with the class rule
+`next = current + 1 (mod 3)`, exactly **2 of the 8 inter-episode edges** violate
+the rule, both at block starts, with transition types `(2→1)` at the T1→T2 seam
+and `(0→2)` at the T2→T3 seam. Every within-episode edge satisfies the rule.
+PASS if the violation count is 2, both are at block starts, and both types are
+exactly those two.
+
+**B4 — restated C3, with the floor made explicit.** In the joined reading,
+`grouped` accuracy is strictly below `rotate`; **every** miss is at a block
+boundary; and **no within-episode position degrades** (every answered
+non-boundary position is a hit). The separate reading is unaffected and is
+reported for completeness, not as part of B4.
+
+## Pass / fail
+
+E1b **passes** if B1–B4 all hold. It **fails** otherwise, and the failure is
+recorded as a failure of the restatement. A fail on B1 or B2 means the
+recurrence graph is genuinely position-dependent; a fail on B3 means the seam
+accounting is wrong and E1's C3 diagnosis needs re-deriving; a fail on B4 means
+the "drop only where the information was removed" claim is false.
+
+## What E1b does not establish
+
+- It does not remove the author, the feed, or the same nine episodes. It is a
+  definitional closure of E1, not independent evidence.
+- It does not test composition, substitution, or scale. Those remain E2, E3,
+  E4.
+- It cannot show that the degree readings are safe in general; it shows only
+  that *this* cycle's neighbourhoods survive *this* rotation. The two-ended
+  stream artifact is still present in every finite feed and is now a named
+  architectural limit, not a surprise.
+- Passing B1–B4 does not make E1 a pass. The original claim set is unchanged.
+
+## Run protocol
+
+```
+python harness/e1b.py           # writes e1b-out.txt, appends nothing else
+```
+
+`e1b.py` imports `e1.build`/`e1.run` and never edits `e1.py`. It re-checks the
+frozen hashes in `FREEZE.md` and aborts on any difference.

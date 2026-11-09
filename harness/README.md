@@ -81,12 +81,19 @@ measure.py    feeding, shape measurement, anticipation, rival extraction
 scenarios.py  ten feeds + the criteria fixed before any run
 run.py        driver, reader-side thresholds, claim judge, sweep
 audit.py      forbidden-vocabulary, no-retained-structure, no-knob checks
+FREEZE.md     the frozen mechanism: hashes, parameters, P0-P6, reporting rules
 e1.py         the first follow-up: order test, against a frozen core hash
+e1b.py        the restatement of E1's rotation claims (post-hoc, frozen)
+e2-prereg.md  fixed-lag interleaving + same-information baseline (pending)
+e3-prereg.md  coordinate-disjoint families + the four outcomes (pending)
+e4-prereg.md  cut scaling and chance-ratio distribution (pending)
+e5-prereg.md  blind-feed protocol and claim vocabulary (frozen, feed pending)
 out.txt       full run output (20 scenario x reading runs)
 sweep.txt     the same, plus the cut-moved report
 RESULTS.md    what the run measured, three findings, the E1 outcome
-e1-prereg.md  the claim set frozen before E1, and what it may not conclude
+e1-prereg.md  the claim set frozen before E1, plus Amendment E1b
 e1-out.txt    E1 output (FAIL on C2 -- see RESULTS.md)
+e1b-out.txt   E1b output (PASS; E1 itself stays FAIL)
 ```
 
 ## Run
@@ -95,16 +102,26 @@ e1-out.txt    E1 output (FAIL on C2 -- see RESULTS.md)
 python harness/run.py          # all scenarios, both readings, writes evidence.json
 python harness/run.py --sweep  # + move the cut across each gap, and outside it
 python harness/audit.py        # prior-leak checks on core.py
+python harness/e1b.py          # restatement of E1's rotation claims
 ```
 
-## The two readings
+## The falsification ladder
 
-`separate` treats each episode as a closed sequence; `joined` splices episodes
-into one stream. Neither is "the" reading — they are the two things the same
-data supports, and the claims that differ between them are listed as such
-(`episodes_separate` / `episodes_joined`, `boundary_declined_*`,
-`probe_silent_*`, `closes_*`). A claim that needs one reading is not evidence
-for the other.
+v0.1 is closed and frozen (`FREEZE.md`). The ladder attacks a different source
+of false confidence at each rung; each rung is pre-registered and each is
+allowed to fail.
+
+| rung | question | status |
+|---|---|---|
+| E1b | Is rotation invariance true for the graph a finite stream supports? | **PASS** — cyclic edges and presence degrees invariant; two seam violations; only the seam position misses |
+| E2 | Can recurrence predict through fixed-lag interleaving beyond a same-information raw-prefix NN? | pre-registered, pending baseline ruling |
+| E3 | Does relational structure survive a coordinate transformation? | redefined (original is a no-op under P1), pending ruling |
+| E4 | Does the cut survive n=500 and dim=16, or is 1.987-vs-2.0 a small-n accident? | pre-registered, pending acceptance-band ruling; cross-cutting |
+| E5 | Can the result survive a feed authored by Brad? | protocol frozen, feed pending |
+
+A pass on E1b does not make E1 a pass. E1's original claim set stays FAIL on
+the record; E1b closes the definition, and the two-ended-stream artifact is now
+a named architectural limit of every degree-based reading.
 
 ## What this does not show
 

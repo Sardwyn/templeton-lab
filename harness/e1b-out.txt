@@ -1,0 +1,34 @@
+E1b -- restatement of E1's rotation claims (e1-prereg.md, Amendment E1b)
+frozen set checked against FREEZE.md:
+hash core.py      8734d335a1481042 ok
+hash measure.py   1c9f076dcaafb274 ok
+hash run.py       5440c370ff6c5ac7 ok
+hash scenarios.py bc8e40d22b65b139 ok
+hash audit.py     e1cd2ee14e996ae1 ok
+hash e1.py        720f90ac910c4824 ok
+
+relabelling cycle -> rotate: (2, 0, 1)
+
+B1 circular edge multiset: IDENTICAL
+   edges as a finite sequence: differ
+   cycle A (mapped) [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 2), (0, 2), (0, 2), (1, 0), (1, 0), (1, 0), (1, 2), (1, 2), (1, 2), (1, 2), (1, 2), (1, 2), (2, 0), (2, 0), (2, 0), (2, 0), (2, 0), (2, 0), (2, 1), (2, 1), (2, 1)]
+   cycle B          [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 2), (0, 2), (0, 2), (1, 0), (1, 0), (1, 0), (1, 2), (1, 2), (1, 2), (1, 2), (1, 2), (1, 2), (2, 0), (2, 0), (2, 0), (2, 0), (2, 0), (2, 0), (2, 1), (2, 1), (2, 1)]
+B1 PASS
+
+B2 presence degrees (successors / predecessors): match / match
+   count delta (cycle - rotate, after relabelling): {0: {'in': -1, 'n': 0, 'out': 0}, 1: {'in': 1, 'n': -1, 'out': 0}, 2: {'in': 0, 'n': 1, 'out': 0}}
+   expected: one class +1 inbound, one class -1 inbound, out 0 everywhere
+B2 PASS (presence holds, one-edge count delta confined)
+
+B3 grouped seams: 8 inter-episode edge(s), 2 violation(s)
+   violations (block, from, to): [(3, 2, 1), (6, 0, 2)]
+   within-episode edges: 18, violations: none
+B3 PASS
+
+B4 rotate joined 9/9, grouped joined 8/9
+   miss positions [0]; off-boundary 0; within-episode 6/6
+   separate reading (descriptive): rotate 6/6, grouped 6/6
+B4 PASS (drop True, boundary-only True, within intact True)
+
+E1b PASS
+This is a post-hoc restatement, not a new blind test; E1 itself stays FAIL.
