@@ -6,7 +6,7 @@ owner: brad
 repo:
 path: F:\Lab\harness
 memory_cell: project-emergent-harness
-updated_at: 2026-11-09T02:45
+updated_at: 2026-11-09T03:10
 ---
 
 **What it is:** a minimal system fed only state (numbers), difference,
@@ -53,7 +53,7 @@ attacks a different source of false confidence at each rung.
 | **E2** | Can recurrence predict through fixed-lag interleaving beyond a raw-prefix nearest-neighbour lookup with the same information? | **FAIL 2026-11-09** — structure and the harness's own prediction pass, but B1 ties at 1.000; the feed is periodic at K=3. See `harness/e2-prereg.md`. |
 | **E3** | Does relational structure survive a coordinate transformation? | **FAIL 2026-11-09 (outcome d)** — 6 classes, no transfer in the primary separate reading; joined reading transfers 3/3 (outcome c). v0.1 groups by state proximity, not delta shape. See `harness/e3-prereg.md`. |
 | **E4** | Does the cut survive n up to 500 and 16 dimensions, or is 1.987-vs-2.0 a small-n accident? | **FAIL 2026-11-09 on power** — null side clean (FPR 1/750, Wilson upper 0.0075), but structured cut-inside is 0.00-0.02 against a 0.80 bar. **Cross-cutting validity test.** See `harness/e4-prereg.md`. |
-| **E5** | Can the results survive a feed authored by Brad, not by the system's author? | **runner frozen 2026-11-09** (hash recorded), feed pending Brad in `harness/feeds/` |
+| **E5** | Can the results survive a feed authored by Brad, not by the system's author? | **FAIL 2026-11-09** — blind feed ran once: 0 classes, no gap, 0/6 held positions answered; pre-holdout probe named a class, but adding the held data erased the cut. See `harness/e5-prereg.md`. |
 
 E4 runs in its numbered position but its result is applied to how E2 and E3 are
 read. A failure in E4 does not retroactively pass or fail them; it changes what
@@ -79,6 +79,16 @@ only one between-cluster nearest-neighbour distance, and `MIN_SIDE=2` needs two
 on each side of the cut, so the derived cut cannot sit inside the authored
 separation (power 0.00-0.02). E4 therefore does not validate the cut at scale; it
 shows the cut's validity interval is empty on a two-point-per-cluster signal.
+
+E5 failed on Brad's blind feed, and the failure is about the cut rather than the
+feed. The feed's probe named a class before holdout, so a cut existed at 24
+states. After the two held episodes were delivered, the completed 30-state feed
+had no admissible gap: `tau` became undefined, `classify` returned `None`, and
+every held position was declined in both readings (0/6 answered). The cut is
+recomputed from all memory on every call, so adding data can erase a separation
+that was there. That is the honest negative E5 existed to return, and it is not
+repaired by editing the feed or the claims. A second attempt is E5b with a new
+feed hash and its own pre-registration.
 
 ## Three definitional findings (ruled 2026-11-09)
 

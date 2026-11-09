@@ -1,10 +1,12 @@
 # E5 feeds — blind, independently authored
 
-This directory is empty by design. E5 is the only rung whose feed is authored by
-someone other than the harness author.
+This directory holds the blind feed(s) for E5. `brad_e5.json` is the first:
+authored by Brad, run once on 2026-11-09, result **E5 FAIL** (no gap on the
+completed feed). See `harness/e5-out.txt` and `harness/RESULTS.md`. A new
+attempt is E5b with a new feed and a new feed hash.
 
-**Place Brad's feed here as one JSON file**, for example
-`harness/feeds/e5-brad-001.json`. The format is fixed in
+**Place a new feed here as one JSON file**, for example
+`harness/feeds/e5-brad-002.json`. The format is fixed in
 `harness/e5-prereg.md` (blocks of `[state, error]`, `holdout_from`, optional
 `probes`, and `criteria`). Do not describe the generator; the point is that the
 runner does not know it.

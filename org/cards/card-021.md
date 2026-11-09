@@ -6,7 +6,7 @@ assignee: qwen
 project: emergent-harness
 depends_on: [card-020]
 created_at: 2026-11-09T01:28
-updated_at: 2026-11-09T02:55
+updated_at: 2026-11-09T03:10
 ---
 
 Each rung is pre-registered before its run and each is allowed to fail. One
@@ -112,17 +112,36 @@ not show that the cut survives scale; it shows the cut's validity interval is
 empty on this two-point-per-cluster signal. E2 and E3 are not retroactively
 passed or failed.
 
-## E5 — runner frozen, feed pending
+## E5 — DONE (FAIL, 2026-11-09)
 
-Brad writes one JSON feed (states, errors, episode boundaries, holdout, probes,
-claims) without describing the generator. `harness/e5.py` is written and frozen
-before any feed exists (sha256 `d2b996408a24faa15aed6761e0939565d3d0e4720707c4022661db3dd13b52c7`,
-recorded in `harness/e5.py.sha256`). It re-checks every hash in `FREEZE.md`,
-prints and records the feed hash, runs the feed unchanged, and publishes every
-row, including failures and n/a. No tuning after; a change is E5b with a new feed
-hash. The claim vocabulary is fixed in `harness/e5-prereg.md`. E5 is the only
-rung that removes the feed's author. The feed goes in `harness/feeds/` (see
-`harness/feeds/README.md`).
+Brad's blind feed `harness/feeds/brad_e5.json` (`e5-brad-weather-001`,
+sha256 `88716892b5b5f0b5a2a414f2bca6eaa5b27d852640ac25eaf039c5a834e81bdc`)
+was run once, unchanged, by the frozen runner
+(`e5.py` sha256 `d2b996408a24faa15aed6761e0939565d3d0e4720707c4022661db3dd13b52c7`).
+Validation passed. Result: **E5 FAIL**, identical in both readings.
+
+| claim | need | result |
+|---|---|---|
+| `gap_ratio_min` | 2.0 | **FAIL** — no gap in the completed feed |
+| `answered_min` | 3 | **FAIL** — 0 answered, 6 declined |
+| `declined_max` | 10 | pass — 6 declined |
+| `probe_named` | true | pass — `[1]` |
+| `probe_support` | 2 | **FAIL** — support 1 |
+
+30 states, 10 episodes (1 joined), 0 classes, gap `none`, accuracy 0.000.
+
+The feed is a four-component seasonal-looking cycle, 10 episodes of 3 states,
+holdout at episode 8. Before holdout the probe was answered and named class 1,
+so a cut existed at 24 states. After the two held episodes were delivered, the
+completed 30-state feed has no admissible gap, `tau` is undefined, `classify`
+returns `None`, and every held position is declined in both readings. The cut is
+recomputed from all memory on every call, and adding data erased the separation
+that was there. That is a measured instability of the cut, not a bug and not a
+repaired pass.
+
+No feed value was changed and no claim was dropped. A second attempt is E5b with
+a new feed hash and its own pre-registration; this feed and output stay on the
+record. See `harness/e5-prereg.md` and `harness/e5-out.txt`.
 
 ## Discipline
 
@@ -135,4 +154,6 @@ modules; it may not edit them.
 `harness/e3-prereg.md`, `harness/e4-prereg.md`, `harness/e5-prereg.md`,
 `harness/e1b.py`, `harness/e1b-out.txt`, `harness/e3.py`, `harness/e3-out.txt`,
 `harness/e4.py`, `harness/e4-out.txt`, `harness/e4.json`, `harness/e5.py`,
-`harness/e5.py.sha256`, `harness/feeds/README.md`.
+`harness/e5.py.sha256`, `harness/feeds/README.md`,
+`harness/feeds/brad_e5.json`, `harness/e5-out.txt`,
+`harness/e5-e5-brad-weather-001.json`.

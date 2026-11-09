@@ -219,20 +219,41 @@ two-point-per-cluster signal. That is a property of the frozen test crossed with
 the frozen mechanism, not a bug repaired in the runner. It does not retroactively
 pass or fail E2 or E3; it lowers what their passes are worth.
 
-## E5 — blind feed (runner frozen, feed pending)
+## E5 — blind feed (pre-registered, `e5-prereg.md`)
 
-E5 has not run. The protocol and claim vocabulary are frozen in `e5-prereg.md`,
-and the runner is written and hashed before any feed exists:
-`e5.py` sha256 `d2b996408a24faa15aed6761e0939565d3d0e4720707c4022661db3dd13b52c7`,
-recorded in `e5.py.sha256`. The runner re-checks every `FREEZE.md` hash, prints
-and records the feed hash, validates the feed without repairing it, runs each
-requested reading through `run_one`, and publishes every claim row plus the four
-E5 checks (`gap_ratio_min`, `cut_inside`, `answered_min`, `declined_max`). A
-malformed feed or an unregistered claim is a failed run, not a skipped one.
+Run once, unchanged: `python harness/e5.py harness/feeds/brad_e5.json` →
+`e5-out.txt`, `e5-e5-brad-weather-001.json`. Result: **E5 FAIL**, identical in
+both readings.
 
-Brad's feed goes in `harness/feeds/` (see its README); the runner is invoked
-once, unchanged, and the output is published including failures. This is the
-only rung that removes the feed's author.
+Feed `e5-brad-weather-001` (authored by Brad), sha256
+`88716892b5b5f0b5a2a414f2bca6eaa5b27d852640ac25eaf039c5a834e81bdc`. All
+`FREEZE.md` hashes matched; the frozen runner sha256 is
+`d2b996408a24faa15aed6761e0939565d3d0e4720707c4022661db3dd13b52c7`.
+Validation passed; no sidecar was supplied, so the printed feed hash is the
+record.
+
+| claim | need | result |
+|---|---|---|
+| `gap_ratio_min` | 2.0 | **FAIL** — no gap in the completed feed |
+| `answered_min` | 3 | **FAIL** — 0 answered, 6 declined |
+| `declined_max` | 10 | pass — 6 declined |
+| `probe_named` | true | pass — `[1]` |
+| `probe_support` | 2 | **FAIL** — support 1 |
+
+30 states, 10 episodes (1 in the joined reading), 0 classes, gap `none`,
+accuracy 0.000.
+
+The pre-holdout probe was answered with support 1 and named class 1, so a cut
+existed at 24 states. After the two held episodes were delivered, the completed
+30-state feed had no admissible gap: `tau` became undefined, `classify`
+returned `None`, and every held position was declined in both readings. The cut
+is recomputed from all memory on every call, so adding data erased a separation
+that was there. That is a measured instability of the cut, not a bug, and it is
+not repaired by editing the feed or the claims. No feed value was changed and no
+claim was dropped.
+
+A second attempt is E5b with a new feed hash and its own pre-registration; this
+feed and its output stay on the record.
 
 ## Evidence file
 

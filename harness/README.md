@@ -92,7 +92,9 @@ e2.py         E2 runner            e2-out.txt   E2 output
 e3.py         E3 runner            e3-out.txt   E3 output
 e4.py         E4 runner            e4-out.txt   E4 output; e4.json per-feed records
 e5.py         E5 runner (frozen before any feed; hash in e5.py.sha256)
-feeds/        Brad's blind feed goes here; format in e5-prereg.md
+feeds/        Brad's blind feed + its README; brad_e5.json is the first feed
+e5-out.txt    E5 output (FAIL -- no gap on the completed feed)
+e5-e5-brad-weather-001.json   E5 machine record
 out.txt       full run output (20 scenario x reading runs)
 sweep.txt     the same, plus the cut-moved report
 RESULTS.md    what the run measured, three findings, the E1 outcome
@@ -122,7 +124,7 @@ allowed to fail.
 | E2 | Can recurrence predict through fixed-lag interleaving beyond a same-information raw-prefix NN? | **FAIL** — structure and the harness's own prediction pass, but B1 ties at 1.000; the feed is periodic at K=3 |
 | E3 | Does relational structure survive a coordinate transformation? | **FAIL (outcome d)** — 6 classes, no transfer in the primary separate reading; joined reading transfers 3/3 (outcome c); v0.1 groups by proximity, not delta shape |
 | E4 | Does the cut survive n=500 and dim=16, or is 1.987-vs-2.0 a small-n accident? | **FAIL on power** — null side clean (FPR 1/750, Wilson upper 0.0075) but structured cut-inside 0.00-0.02 vs a 0.80 bar; cross-cutting |
-| E5 | Can the result survive a feed authored by Brad? | **runner frozen** (hash in `e5.py.sha256`), feed pending in `feeds/` |
+| E5 | Can the result survive a feed authored by Brad? | **FAIL** — 0 classes, no gap, 0/6 held positions answered; the pre-holdout probe named a class, but the completed feed's cut was erased |
 
 A pass on E1b does not make E1 a pass. E1's original claim set stays FAIL on
 the record; E1b closes the definition, and the two-ended-stream artifact is now

@@ -1,0 +1,375 @@
+{
+ "name": "e5-brad-weather-001",
+ "valid": true,
+ "errors": [],
+ "authored_by": "brad",
+ "created": "2026-11-09T00:00",
+ "kind": "prediction",
+ "holdout_from": 8,
+ "readings": {
+  "separate": {
+   "gap": null,
+   "tau": null,
+   "classes": 0,
+   "sizes": [],
+   "invariant": [],
+   "accuracy": {
+    "rows": 6,
+    "answered": 0,
+    "declined": 6,
+    "acc": 0.0
+   },
+   "probes": [
+    {
+     "why": "late-winter state inside recurring seasonal recurrence",
+     "named": 1,
+     "should_name": true,
+     "answered": true,
+     "context": [
+      0,
+      1
+     ],
+     "k": 2,
+     "support": 1,
+     "confidence": 1.0,
+     "err": 0.6,
+     "competitors": [
+      [
+       2,
+       1,
+       0.6
+      ]
+     ],
+     "hit": true
+    }
+   ],
+   "asked": [
+    {
+     "block": 8,
+     "boundary": true,
+     "pos": 0,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": 11,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.71
+    },
+    {
+     "block": 8,
+     "boundary": false,
+     "pos": 1,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.66
+    },
+    {
+     "block": 8,
+     "boundary": false,
+     "pos": 2,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.61
+    },
+    {
+     "block": 9,
+     "boundary": true,
+     "pos": 3,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.46
+    },
+    {
+     "block": 9,
+     "boundary": false,
+     "pos": 4,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.36
+    },
+    {
+     "block": 9,
+     "boundary": false,
+     "pos": 5,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.31
+    }
+   ],
+   "claims": {
+    "derived cut": {
+     "pass": null,
+     "value": {
+      "gap": null,
+      "tau": null
+     }
+    },
+    "gap_ratio_min": {
+     "pass": false,
+     "value": {
+      "ratio": null,
+      "need": 2.0
+     }
+    },
+    "answered_min": {
+     "pass": false,
+     "value": {
+      "rows": 6,
+      "answered": 0,
+      "declined": 6,
+      "acc": 0.0
+     }
+    },
+    "declined_max": {
+     "pass": true,
+     "value": {
+      "rows": 6,
+      "answered": 0,
+      "declined": 6,
+      "acc": 0.0
+     }
+    },
+    "probe_named": {
+     "pass": true,
+     "value": [
+      1
+     ]
+    },
+    "probe_support": {
+     "pass": false,
+     "value": {
+      "context": [
+       0,
+       1
+      ],
+      "support": 1
+     }
+    }
+   }
+  },
+  "joined": {
+   "gap": null,
+   "tau": null,
+   "classes": 0,
+   "sizes": [],
+   "invariant": [],
+   "accuracy": {
+    "rows": 6,
+    "answered": 0,
+    "declined": 6,
+    "acc": 0.0
+   },
+   "probes": [
+    {
+     "why": "late-winter state inside recurring seasonal recurrence",
+     "named": 1,
+     "should_name": true,
+     "answered": true,
+     "context": [
+      0,
+      1
+     ],
+     "k": 2,
+     "support": 1,
+     "confidence": 1.0,
+     "err": 0.6,
+     "competitors": [
+      [
+       2,
+       1,
+       0.6
+      ]
+     ],
+     "hit": true
+    }
+   ],
+   "asked": [
+    {
+     "block": 8,
+     "boundary": true,
+     "pos": 0,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": 11,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.71
+    },
+    {
+     "block": 8,
+     "boundary": false,
+     "pos": 1,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.66
+    },
+    {
+     "block": 8,
+     "boundary": false,
+     "pos": 2,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.61
+    },
+    {
+     "block": 9,
+     "boundary": true,
+     "pos": 3,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.46
+    },
+    {
+     "block": 9,
+     "boundary": false,
+     "pos": 4,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.36
+    },
+    {
+     "block": 9,
+     "boundary": false,
+     "pos": 5,
+     "asked": 0,
+     "hit": false,
+     "declined": true,
+     "predict": null,
+     "actual": null,
+     "confidence": 0.0,
+     "support": 0,
+     "err": null,
+     "rivals": 0,
+     "observed_err": 0.31
+    }
+   ],
+   "claims": {
+    "derived cut": {
+     "pass": null,
+     "value": {
+      "gap": null,
+      "tau": null
+     }
+    },
+    "gap_ratio_min": {
+     "pass": false,
+     "value": {
+      "ratio": null,
+      "need": 2.0
+     }
+    },
+    "answered_min": {
+     "pass": false,
+     "value": {
+      "rows": 6,
+      "answered": 0,
+      "declined": 6,
+      "acc": 0.0
+     }
+    },
+    "declined_max": {
+     "pass": true,
+     "value": {
+      "rows": 6,
+      "answered": 0,
+      "declined": 6,
+      "acc": 0.0
+     }
+    },
+    "probe_named": {
+     "pass": true,
+     "value": [
+      1
+     ]
+    },
+    "probe_support": {
+     "pass": false,
+     "value": {
+      "context": [
+       0,
+       1
+      ],
+      "support": 1
+     }
+    }
+   }
+  }
+ },
+ "feed": {
+  "path": "F:\\Lab\\harness\\feeds\\brad_e5.json",
+  "sha256": "88716892b5b5f0b5a2a414f2bca6eaa5b27d852640ac25eaf039c5a834e81bdc"
+ },
+ "runner_sha256": "d2b996408a24faa15aed6761e0939565d3d0e4720707c4022661db3dd13b52c7",
+ "prereg_sha256": "57edd691ce51254e193b48efa832f855df71146648e5a5e56fcee16369abeb47"
+}
