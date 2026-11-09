@@ -1,0 +1,260 @@
+﻿
+null_random [control] -- separate
+  derived cut            n/a   {"gap": null, "tau": null}
+  no_cut                 pass  null
+  no_convergence         pass  0
+  no_divergence          pass  0
+  no_collapse            pass  null
+  below_claims           pass  {"acc": 0.0, "answered": 0, "declined": 18, "rows": 18}
+  no_dominance           pass  [0.0, 0.0]
+  err_floor              n/a   {"classes": 0, "min_class_err": null}
+
+null_random [control] -- joined
+  derived cut            n/a   {"gap": null, "tau": null}
+  no_cut                 pass  null
+  no_convergence         pass  0
+  no_divergence          pass  0
+  no_collapse            pass  null
+  below_claims           pass  {"acc": 0.0, "answered": 0, "declined": 18, "rows": 18}
+  no_dominance           pass  [0.0, 0.0]
+  err_floor              n/a   {"classes": 0, "min_class_err": null}
+
+prediction [prediction] -- separate
+  derived cut            n/a   {"gap": 72.52, "tau": 0.20355}
+  classes                pass  3
+  states                 pass  27
+  episodes_separate      pass  9
+  sizes                  pass  [9, 9, 9]
+  anticipatory           pass  {"acc": 1.0, "answered": 6, "declined": 3, "rows": 9}
+  probe_support          pass  {"context": [0, 1], "support": 6}
+  probe_named            pass  [1]
+  probe_silent_separate  pass  {"answered": false, "competitors": [], "context": null, "named": 2}
+  err_across_classes     pass  {"0": 0.1, "1": 0.45, "2": 0.8}
+
+prediction [prediction] -- joined
+  derived cut            n/a   {"gap": 72.52, "tau": 0.20355}
+  classes                pass  3
+  states                 pass  27
+  episodes_joined        pass  1
+  sizes                  pass  [9, 9, 9]
+  anticipatory           pass  {"acc": 1.0, "answered": 9, "declined": 0, "rows": 9}
+  probe_support          pass  {"context": [0, 1], "support": 6}
+  probe_named            pass  [1]
+  probe_silent_joined    pass  {"answered": true, "competitors": [[0, 5, 0.1]], "context": [2], ...
+  err_across_classes     pass  {"0": 0.1, "1": 0.45, "2": 0.8}
+
+identity [identity] -- separate
+  derived cut            n/a   {"gap": 72.52, "tau": 0.20355}
+  classes                pass  3
+  states                 pass  27
+  episodes_separate      pass  9
+  sizes                  pass  [9, 9, 9]
+  probe_named            pass  [0, 1, 2]
+  probe_distinct         pass  [0, 1, 2]
+  probe_unnamed          pass  {"context": null, "named": null}
+  err_across_classes     pass  {"0": 0.1, "1": 0.45, "2": 0.8}
+
+identity [identity] -- joined
+  derived cut            n/a   {"gap": 72.52, "tau": 0.20355}
+  classes                pass  3
+  states                 pass  27
+  episodes_joined        pass  1
+  sizes                  pass  [9, 9, 9]
+  probe_named            pass  [0, 1, 2]
+  probe_distinct         pass  [0, 1, 2]
+  probe_unnamed          pass  {"context": null, "named": null}
+  err_across_classes     pass  {"0": 0.1, "1": 0.45, "2": 0.8}
+
+continuity [continuity] -- separate
+  derived cut            n/a   {"gap": 72.52, "tau": 0.20355}
+  classes                pass  3
+  states                 pass  27
+  episodes_separate      pass  9
+  sizes                  pass  [9, 9, 9]
+  anticipatory           pass  {"acc": 1.0, "answered": 6, "declined": 3, "rows": 9}
+  boundary_declined_separate pass  {"declined": 3, "fraction": 1.0, "rows": 3}
+
+continuity [continuity] -- joined
+  derived cut            n/a   {"gap": 72.52, "tau": 0.20355}
+  classes                pass  3
+  states                 pass  27
+  episodes_joined        pass  1
+  sizes                  pass  [9, 9, 9]
+  anticipatory           pass  {"acc": 1.0, "answered": 9, "declined": 0, "rows": 9}
+  boundary_declined_joined pass  {"declined": 0, "fraction": 0.0, "rows": 3}
+
+causality [causality] -- separate
+  derived cut            n/a   {"gap": 18.77, "tau": 0.0543}
+  classes                pass  6
+  states                 pass  30
+  episodes_separate      pass  12
+  sizes                  pass  [9, 7, 5, 3, 3, 3]
+  centre                 pass  1
+  converges              pass  1
+  arrival_gt_departure   pass  {"arrive": 0.4006, "centre": 1, "depart": 0.1027}
+  err_within_class       pass  {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0}
+  err_center             pass  {"centre": 1, "mean_err": 0.0}
+  err_worse_after        pass  {"after": {"2": 0.75, "4": 0.95}, "arriving": 0.0, "centre": 1}
+  probe_support          pass  {"context": [0], "support": 3}
+  probe_silent_separate  pass  {"answered": false, "competitors": [], "context": null, "named": 2}
+  closes_separate        pass  [2, 4]
+
+causality [causality] -- joined
+  derived cut            n/a   {"gap": 18.77, "tau": 0.0543}
+  classes                pass  6
+  states                 pass  30
+  episodes_joined        pass  1
+  sizes                  pass  [9, 7, 5, 3, 3, 3]
+  centre                 pass  1
+  converges              pass  1
+  arrival_gt_departure   pass  {"arrive": 0.4006, "centre": 1, "depart": 0.1027}
+  err_within_class       pass  {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0}
+  err_center             pass  {"centre": 1, "mean_err": 0.0}
+  err_worse_after        pass  {"after": {"2": 0.75, "4": 0.95}, "arriving": 0.0, "centre": 1}
+  probe_support          pass  {"context": [0], "support": 3}
+  probe_silent_joined    pass  {"answered": true, "competitors": [[3, 2, 0.3], [0, 1, 0.1], [5, ...
+  closes_joined          pass  []
+
+agency [agency] -- separate
+  derived cut            n/a   {"gap": 77.88, "tau": 0.20141}
+  classes                pass  7
+  states                 pass  27
+  episodes_separate      pass  9
+  sizes                  pass  [9, 3, 3, 3, 3, 3, 3]
+  centre                 pass  1
+  diverges               pass  1
+  fork_successors_open   pass  {"centre": 1, "successors": [[2, 0], [4, 0], [6, 0]]}
+  err_within_class       pass  {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6":...
+  err_center             pass  {"centre": 1, "mean_err": 0.2}
+  err_worse_after        pass  {"after": {"2": 0.2, "4": 0.5, "6": 0.8}, "arriving": 0.2, "centr...
+  rivals_min             pass  [[2, 2, 0.2], [4, 2, 0.5], [6, 2, 0.8]]
+  probe_silent_separate  pass  {"answered": false, "competitors": [], "context": null, "named": 2}
+
+agency [agency] -- joined
+  derived cut            n/a   {"gap": 77.88, "tau": 0.20141}
+  classes                pass  7
+  states                 pass  27
+  episodes_joined        pass  1
+  sizes                  pass  [9, 3, 3, 3, 3, 3, 3]
+  centre                 pass  1
+  diverges               pass  1
+  fork_successors_open   pass  {"centre": 1, "successors": [[2, 1], [4, 1], [6, 1]]}
+  err_within_class       pass  {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6":...
+  err_center             pass  {"centre": 1, "mean_err": 0.2}
+  err_worse_after        pass  {"after": {"2": 0.2, "4": 0.5, "6": 0.8}, "arriving": 0.2, "centr...
+  rivals_min             pass  [[2, 2, 0.2], [4, 2, 0.5], [6, 2, 0.8]]
+  probe_silent_joined    pass  {"answered": true, "competitors": [[3, 2, 0.15]], "context": [2],...
+
+self_frame [self] -- separate
+  derived cut            n/a   {"gap": 41.92, "tau": 0.10027}
+  classes                pass  5
+  states                 pass  15
+  episodes_separate      pass  5
+  sizes                  pass  [3, 3, 3, 3, 3]
+  invariant              pass  [1, 2]
+  err_within_class_min   pass  {"0": 0.7, "1": 0.7, "2": 0.7, "3": 0.7, "4": 0.7}
+  probe_named            pass  [2]
+
+self_frame [self] -- joined
+  derived cut            n/a   {"gap": 41.92, "tau": 0.10027}
+  classes                pass  5
+  states                 pass  15
+  episodes_joined        pass  1
+  sizes                  pass  [3, 3, 3, 3, 3]
+  invariant              pass  [1, 2]
+  err_within_class_min   pass  {"0": 0.7, "1": 0.7, "2": 0.7, "3": 0.7, "4": 0.7}
+  probe_named            pass  [2]
+
+self_drift [self] -- separate
+  derived cut            n/a   {"gap": 2.46, "tau": 0.13777}
+  classes                pass  5
+  states                 pass  15
+  episodes_separate      pass  5
+  sizes                  pass  [3, 3, 3, 3, 3]
+  invariant              pass  [1]
+  drift_visible          pass  {"lo": 0.0797, "worst_within_class": 0.6}
+  err_within_class_min   pass  {"0": 0.7, "1": 0.7, "2": 0.7, "3": 0.7, "4": 0.7}
+  probe_named            pass  [2]
+
+self_drift [self] -- joined
+  derived cut            n/a   {"gap": 2.46, "tau": 0.13777}
+  classes                pass  5
+  states                 pass  15
+  episodes_joined        pass  1
+  sizes                  pass  [3, 3, 3, 3, 3]
+  invariant              pass  [1]
+  drift_visible          pass  {"lo": 0.0797, "worst_within_class": 0.6}
+  err_within_class_min   pass  {"0": 0.7, "1": 0.7, "2": 0.7, "3": 0.7, "4": 0.7}
+  probe_named            pass  [2]
+
+witness_equal [witness] -- separate
+  derived cut            n/a   {"gap": 95.99, "tau": 0.20105}
+  classes                pass  4
+  states                 pass  36
+  episodes_separate      pass  12
+  sizes                  pass  [12, 12, 6, 6]
+  err_across_classes     pass  {"0": 0.2, "1": 0.3, "2": 0.25, "3": 0.6}
+  rivals_count           pass  [[2, 3, 0.25], [3, 3, 0.6]]
+  equal_support          pass  [[2, 3, 0.25], [3, 3, 0.6]]
+  probe_support          pass  {"context": [0, 1], "support": 3}
+  probe_named            pass  [1]
+
+witness_equal [witness] -- joined
+  derived cut            n/a   {"gap": 95.99, "tau": 0.20105}
+  classes                pass  4
+  states                 pass  36
+  episodes_joined        pass  1
+  sizes                  pass  [12, 12, 6, 6]
+  err_across_classes     pass  {"0": 0.2, "1": 0.3, "2": 0.25, "3": 0.6}
+  rivals_count           pass  [[2, 3, 0.25], [3, 3, 0.6]]
+  equal_support          pass  [[2, 3, 0.25], [3, 3, 0.6]]
+  probe_support          pass  {"context": [0, 1], "support": 3}
+  probe_named            pass  [1]
+
+witness_ranked [witness] -- separate
+  derived cut            n/a   {"gap": 72.26, "tau": 0.15187}
+  classes                pass  5
+  states                 pass  37
+  episodes_separate      pass  13
+  sizes                  pass  [12, 12, 6, 6, 1]
+  err_across_classes     pass  {"0": 0.15, "1": 0.2, "2": 0.3, "3": 0.25, "4": 0.9}
+  pick_is_cheaper        pass  {"cheapest": 0.25, "other": 0.9}
+  rivals_count           pass  [[3, 3, 0.25], [4, 3, 0.9]]
+  probe_support          pass  {"context": [1, 2], "support": 3}
+  probe_named            pass  [2]
+
+witness_ranked [witness] -- joined
+  derived cut            n/a   {"gap": 72.26, "tau": 0.15187}
+  classes                pass  5
+  states                 pass  37
+  episodes_joined        pass  1
+  sizes                  pass  [12, 12, 6, 6, 1]
+  err_across_classes     pass  {"0": 0.15, "1": 0.2, "2": 0.3, "3": 0.25, "4": 0.9}
+  pick_is_cheaper        pass  {"cheapest": 0.25, "other": 0.9}
+  rivals_count           pass  [[3, 3, 0.25], [4, 3, 0.9]]
+  probe_support          pass  {"context": [1, 2], "support": 3}
+  probe_named            pass  [2]
+
+0 failing claim(s)
+
+=== the cut moved: inside its own gap, and outside it ===
+  null_random    no separation observed: imposed cut tau=0.10           -> classes 0, accuracy 0.000. The harness cannot be talked into recurrences the feed does not support.
+  prediction     separate gap 0.0055..0.4016  inside: verdicts hold   outside(gap): classes 3, unchanged True
+  prediction     joined   gap 0.0055..0.4016  inside: verdicts hold   outside(gap): classes 3, unchanged True
+  identity       separate gap 0.0055..0.4016  inside: verdicts hold   outside(gap): classes 3, unchanged True
+  identity       joined   gap 0.0055..0.4016  inside: verdicts hold   outside(gap): classes 3, unchanged True
+  continuity     separate gap 0.0055..0.4016  inside: verdicts hold   outside(gap): classes 3, unchanged True
+  continuity     joined   gap 0.0055..0.4016  inside: verdicts hold   outside(gap): classes 3, unchanged True
+  causality      separate gap 0.0055..0.1031  inside: verdicts hold   outside(gap): classes 6, unchanged True
+  causality      joined   gap 0.0055..0.1031  inside: verdicts hold   outside(gap): classes 6, unchanged True
+  agency         separate gap 0.0051..0.3977  inside: verdicts hold   outside(gap): classes 7, unchanged True
+  agency         joined   gap 0.0051..0.3977  inside: verdicts hold   outside(gap): classes 7, unchanged True
+  self_frame     separate gap 0.0047..0.1959  inside: verdicts hold   outside(gap): classes 5, unchanged True
+  self_frame     joined   gap 0.0047..0.1959  inside: verdicts hold   outside(gap): classes 5, unchanged True
+  self_drift     separate gap 0.0797..0.1959  inside: verdicts hold   outside(gap): classes 5, unchanged True
+  self_drift     joined   gap 0.0797..0.1959  inside: verdicts hold   outside(gap): classes 5, unchanged True
+  witness_equal  separate gap 0.0041..0.3980  inside: verdicts hold   outside(gap): classes 4, unchanged True
+  witness_equal  joined   gap 0.0041..0.3980  inside: verdicts hold   outside(gap): classes 4, unchanged True
+  witness_ranked separate gap 0.0041..0.2996  inside: verdicts hold   outside(gap): classes 5, unchanged True
+  witness_ranked joined   gap 0.0041..0.2996  inside: verdicts hold   outside(gap): classes 5, unchanged True
+evidence -> F:\Lab\trials\evidence\harness-v01\evidence.json

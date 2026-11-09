@@ -1,0 +1,24 @@
+E1 -- order test. Frozen core.py 8734d335a1481042 (expected 8734d335a1481042)
+cycle    separate classes 3 sizes [9, 9, 9] acc 6/6 declined 3
+cycle    joined   classes 3 sizes [9, 9, 9] acc 9/9 declined 0
+rotate   separate classes 3 sizes [9, 9, 9] acc 6/6 declined 3
+rotate   joined   classes 3 sizes [9, 9, 9] acc 9/9 declined 0
+grouped  separate classes 3 sizes [9, 9, 9] acc 6/6 declined 3
+grouped  joined   classes 3 sizes [9, 9, 9] acc 8/9 declined 0
+
+C1 cycle    matches cycle    sizes [9, 9, 9]  errors [0.1, 0.45, 0.8]
+C1 rotate   matches cycle    sizes [9, 9, 9]  errors [0.45, 0.8, 0.1]
+C1 grouped  matches cycle    sizes [9, 9, 9]  errors [0.1, 0.45, 0.8]
+C1 PASS
+
+C2 rotation identity after relabelling: MOVED
+C2 diagnostic: directed edges differ as a sequence; identical as a cycle (the return edge added)
+C2 FAIL
+
+C3 rotate 9/9  grouped 8/9  miss positions [0]  off-boundary 0
+C3 PASS (drop True, boundary-only True)
+
+C4 declined in separate: {'cycle': 3, 'rotate': 3, 'grouped': 3}
+C4 PASS
+
+E1 FAIL
