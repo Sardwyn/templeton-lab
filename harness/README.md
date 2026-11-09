@@ -114,7 +114,7 @@ allowed to fail.
 | rung | question | status |
 |---|---|---|
 | E1b | Is rotation invariance true for the graph a finite stream supports? | **PASS** — cyclic edges and presence degrees invariant; two seam violations; only the seam position misses |
-| E2 | Can recurrence predict through fixed-lag interleaving beyond a same-information raw-prefix NN? | pre-registered, pending baseline ruling |
+| E2 | Can recurrence predict through fixed-lag interleaving beyond a same-information raw-prefix NN? | **FAIL** — structure and the harness's own prediction pass, but B1 ties at 1.000; the feed is periodic at K=3 |
 | E3 | Does relational structure survive a coordinate transformation? | redefined (original is a no-op under P1), pending ruling |
 | E4 | Does the cut survive n=500 and dim=16, or is 1.987-vs-2.0 a small-n accident? | pre-registered, pending acceptance-band ruling; cross-cutting |
 | E5 | Can the result survive a feed authored by Brad? | protocol frozen, feed pending |

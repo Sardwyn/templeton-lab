@@ -130,6 +130,29 @@ What E1 therefore established and what it did not:
   the reading is declared circular, or the first and last positions are excluded
   by the reader and said so.
 
+## E2 — fixed-lag interleaving (pre-registered, `e2-prereg.md`)
+
+Run: `python harness/e2.py` → `e2-out.txt`. Result: **E2 FAIL** on P2.
+
+| claim | joined reading |
+|---|---|
+| S1 six classes of 8, gap ratio ≥ 2, no cross-region merge | **PASS** — 6 classes, `[8,8,8,8,8,8]`, gap 26.433, cut 0.065247 |
+| S2 region-to-class bijection, no composite label | **PASS** — one authored region per class |
+| P1 harness accuracy ≥ 0.80 | **PASS** — 24/24, 1.000 |
+| P2 harness ≥ B1 + 0.10 on paired positions | **FAIL** — harness 1.000 vs B1 1.000, delta +0.000, both answered 24 |
+| P3 B0 exact-suffix floor | reported — answered 0, as expected under jitter |
+
+The separate reading is identical in shape and in the tie (20/20 both).
+
+Why: the interleaving is still periodic. One 6-state cycle
+(A0 B0 A1 B1 A2 B2) repeats eight times; any raw 3-prefix recurs in the
+previous cycle with the same successor, so B1 memorises the period. The
+design's local claim — the next state is not in the immediate prefix — was
+true and irrelevant. E2 measured the thing it was built to measure and returned
+the negative it allowed: on this feed, recurrence adds nothing over raw-prefix
+nearest neighbour. A non-vacuous E2b would need a non-repeating stream, or a
+successor that depends on more than `K`.
+
 ## Evidence file
 
 `evidence.json` holds `priors`, `thresholds` (reader-side: accuracy 0.80, fan 3,

@@ -6,7 +6,7 @@ owner: brad
 repo:
 path: F:\Lab\harness
 memory_cell: project-emergent-harness
-updated_at: 2026-11-09T01:55
+updated_at: 2026-11-09T02:04
 ---
 
 **What it is:** a minimal system fed only state (numbers), difference,
@@ -50,16 +50,22 @@ attacks a different source of false confidence at each rung.
 | rung | question | status |
 |---|---|---|
 | **E1b** | Is the rotation claim true for the graph a finite stream actually supports? | **DONE, PASS 2026-11-09** -- B1 cyclic edge multiset, B2 presence degrees, B3 two seam violations, B4 seam-only prediction drop. E1 itself stays FAIL. |
-| **E2** | Can recurrence predict through fixed-lag interleaving beyond a raw-prefix nearest-neighbour lookup with the same information? | pre-registered, pending baseline ruling |
-| **E3** | Does relational structure survive a coordinate transformation? | redefined (original was a no-op under P1), pending ruling; expected negative |
-| **E4** | Does the cut survive n up to 500 and 16 dimensions, or is 1.987-vs-2.0 a small-n accident? | pre-registered, pending acceptance-band ruling; **cross-cutting validity test** |
+| **E2** | Can recurrence predict through fixed-lag interleaving beyond a raw-prefix nearest-neighbour lookup with the same information? | **FAIL 2026-11-09** — structure and the harness's own prediction pass, but B1 ties at 1.000; the feed is periodic at K=3. See `harness/e2-prereg.md`. |
+| **E3** | Does relational structure survive a coordinate transformation? | redefined and **FROZEN 2026-11-09** (original was a no-op under P1); expected negative, not yet run |
+| **E4** | Does the cut survive n up to 500 and 16 dimensions, or is 1.987-vs-2.0 a small-n accident? | **FROZEN 2026-11-09**, not yet run; **cross-cutting validity test** |
 | **E5** | Can the results survive a feed authored by Brad, not by the system's author? | protocol frozen, feed pending |
 
 E4 runs in its numbered position but its result is applied to how E2 and E3 are
 read. A failure in E4 does not retroactively pass or fail them; it changes what
 their passes are worth.
 
-## Three definitional findings (need Brad's ruling before the next freeze)
+E2 failed on P2 because the interleaving is periodic: the 6-state cycle repeats,
+so a raw 3-prefix recurs with the same successor and the baseline ties at 1.000.
+The harness's structure and its own prediction were perfect; recurrence simply
+added nothing over raw lookups on that feed. That is the negative the rung
+existed to be able to return.
+
+## Three definitional findings (ruled 2026-11-09)
 
 1. **E3 as originally stated is vacuous.** P1 is mean absolute deviation, which
    is permutation-invariant, so a pure component permutation changes no
@@ -78,6 +84,10 @@ their passes are worth.
    feeds/cell and is much stricter; it would fail E4 on multiple-comparison
    grounds as much as on method grounds. Confirm the pooled band or choose the
    per-cell one before the run.
+
+**Ruled 2026-11-09:** Brad accepted the recommendation on all three. E3 is the
+frozen coordinate-disjoint rung; E2 uses B1 primary and B0 as the reported
+floor; E4 uses the pooled Wilson band. All three preregs are frozen.
 
 ## Standing caveat
 

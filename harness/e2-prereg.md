@@ -1,7 +1,9 @@
 # E2 pre-registration — fixed-lag interleaving, against a same-information baseline
 
-**PROVISIONAL. Not frozen until Brad rules on the baseline choice in §Open
-decision.** No E2 feed has been run. The mechanism is frozen by `FREEZE.md`.
+**FROZEN 2026-11-09, after Brad's ruling: `B1` (raw-prefix nearest neighbour)
+is the primary comparator, `B0` (exact-suffix longest match) the reported
+floor.** No E2 feed had been run when this was frozen. The mechanism is frozen
+by `FREEZE.md`.
 
 ## Question
 
@@ -138,13 +140,13 @@ Failure modes and what each means:
 - It does not remove the author. The feed is still built by the same agent as
   the claims.
 
-## Open decision (Brad's ruling required)
+## Ruling (2026-11-09)
 
-1. **Baseline choice.** Recommended: run both, but make **B1 the primary
-   comparator** and B0 the reported floor. B0 alone is a strawman under jitter:
-   it will answer almost nothing, so "beats B0" would be uninformative. B1 is
-   the only baseline with the same information and opportunity. If Brad rules
-   B0 only, P2 must be rewritten before the run and the rung is much weaker.
+Brad ruled: run both, but **B1 is the primary comparator** and **B0 is the
+reported floor**. B0 alone would be a strawman under jitter — it is expected to
+answer almost nothing, so "beats B0" would be uninformative. B1 is the only
+baseline with the same information and opportunity. This section is no longer
+open; the ruling is part of the frozen rung.
 
 ## Run protocol
 
@@ -156,3 +158,58 @@ python harness/e2.py            # writes e2-out.txt, appends nothing else
 both readings, and prints the structure rows, the harness rows, B1, B0, the
 paired comparison, and the S/P verdicts. The build record names the output file
 and the exit code.
+
+---
+
+# Post-hoc diagnosis — 2026-11-09, after the run
+
+**Status: post-hoc. This is not a pass and it does not repair the failed claim.**
+The frozen pre-registration above ran unchanged. `e2.py`'s prereg hash at run
+time was `6c9d8fedd77d23684ac38203b64ceab520b062f8c8f495ac449905518d1c62db`;
+this section was appended afterwards, so the file's current hash differs.
+
+## What happened
+
+E2 **FAIL** on **P2**, in both readings:
+
+```
+joined    S1 PASS  S2 PASS  P1 PASS (1.000)  P2 FAIL (1.000 vs B1 1.000)
+separate  S1 PASS  S2 PASS  P1 PASS (1.000)  P2 FAIL (1.000 vs B1 1.000)
+```
+
+Structure was exactly as authored: 6 classes, sizes `[8,8,8,8,8,8]`, gap ratio
+26.433, cut 0.065247, one authored region per class, bijection intact. The
+harness answered every joined position and was right every time. B1 answered the
+same 24 positions and was right every time. Delta `+0.000`. B0 answered 0, as
+pre-registered under jitter.
+
+## Why the feed did not do what the design intended
+
+The design said: "the raw prefix at a tested position therefore never contains
+the next state." That sentence is true and irrelevant. The feed is still
+**periodic**: the same six-state cycle repeats eight times. At `K = 3`, any
+three consecutive states uniquely determine the position inside a deterministic
+6-cycle, and the same three-state prefix occurs in every earlier cycle. B1 does
+not need the next state to be in the prefix; it only needs an earlier prefix
+that is followed by the next state, and periodicity supplies one at distance
+~0.001 (jitter only).
+
+Interleaving at a fixed lag changes which states are adjacent. It does not make
+the stream non-repeating, and `K = 3 < 6` is not short enough to break the
+correspondence. So the rung measured what it was built to measure and returned
+the negative it was designed to be able to return: **on this feed, recurrence
+adds nothing over a raw-prefix nearest neighbour with the same information.**
+
+## What a non-vacuous E2 would need
+
+A feed in which the raw `K`-prefix does not recur with the same successor. Two
+ways, both new experiments:
+
+- a **non-periodic** stream whose local prefix is not recycled (e.g. a
+  de Bruijn-like ordering, or a cycle whose lag changes), or
+- a successor that depends on **more history than `K`**, so a 3-state raw prefix
+  is genuinely ambiguous while the class context still carries the answer.
+
+Either would be **E2b**, with its own feed hash and pre-registration, frozen
+before the feed is built. The current result stays on the record as a FAIL.
+

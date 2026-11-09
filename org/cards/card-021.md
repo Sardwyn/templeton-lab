@@ -6,7 +6,7 @@ assignee: qwen
 project: emergent-harness
 depends_on: [card-020]
 created_at: 2026-11-09T01:28
-updated_at: 2026-11-09T01:55
+updated_at: 2026-11-09T02:04
 ---
 
 Each rung is pre-registered before its run and each is allowed to fail. One
@@ -40,17 +40,24 @@ This closes the definition, not E1: E1 stays FAIL on its original claim set.
 The two-ended-stream artifact is now a named architectural limit of every
 degree-based reading, not a surprise.
 
-## E2 — pre-registered, pending ruling (not run)
+## E2 — DONE (FAIL, 2026-11-09)
 
-Fixed-lag interleaving of two 3-cycles (A0 B0 A1 B1 A2 B2, lag 2), so the next
-state is not in the literal prefix. Pass = six classes at the derived cut, no
-cross-family merge, harness accuracy >= 0.80, and harness beats a **raw-prefix
-nearest-neighbour baseline with the same K, same cut, same memory** by >= 0.10
-on paired positions. Exact-suffix longest match is the reported floor.
-See `harness/e2-prereg.md`.
+Fixed-lag interleaving of two 3-cycles (A0 B0 A1 B1 A2 B2, lag 2), 8 episodes,
+holdout 4. Frozen after Brad's ruling: B1 raw-prefix NN (same K/cut/memory) is
+the primary comparator; B0 exact-suffix is the reported floor.
 
-**Open ruling:** B1 raw-prefix NN is the primary comparator (recommended);
-B0 exact-suffix alone is a strawman under jitter.
+Result: **E2 FAIL on P2.** Structure and the harness's own prediction both pass:
+6 classes `[8,8,8,8,8,8]`, gap 26.433, cut 0.065247, no cross-region merge,
+bijection intact, harness 24/24 joined (1.000). But B1 is also 24/24, so
+harness - B1 = +0.000 < +0.10. B0 answered 0. The separate reading is identical
+(20/20 both).
+
+Cause: the interleaving is periodic. One 6-state cycle repeats eight times; a
+raw 3-prefix recurs with the same successor, so B1 memorises the period and the
+harness has nothing to add. This is the negative E2 was built to be able to
+return, not a repaired pass. A non-vacuous E2b needs a non-repeating stream or
+a successor depending on more than K. See `harness/e2-prereg.md` (post-hoc
+diagnosis).
 
 ## E3 — redefined, pending ruling (not run)
 

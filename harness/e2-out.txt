@@ -1,0 +1,59 @@
+E2 -- fixed-lag interleaving vs a same-information raw-prefix baseline
+prereg sha256 6c9d8fedd77d23684ac38203b64ceab520b062f8c8f495ac449905518d1c62db
+frozen set checked against FREEZE.md:
+hash core.py      8734d335a1481042 ok
+hash measure.py   1c9f076dcaafb274 ok
+hash run.py       5440c370ff6c5ac7 ok
+hash scenarios.py bc8e40d22b65b139 ok
+hash audit.py     e1cd2ee14e996ae1 ok
+hash e1.py        720f90ac910c4824 ok
+
+feed: 8 episodes x 6 states, holdout_from=4, 24 positions predicted
+order per episode: A0 B0 A1 B1 A2 B2
+jitter amp 0.008 on components 0 and 3; per-visit seeds
+
+--- joined reading ---
+STRUCTURE
+  states 48  episodes 1  classes 6  sizes [8, 8, 8, 8, 8, 8]
+  gap ratio 26.433  lo 0.004757  hi 0.125738  cut 0.065247
+  class -> authored region(s): {0: ['A0'], 1: ['B0'], 2: ['A1'], 3: ['B1'], 4: ['A2'], 5: ['B2']}
+  classes spanning more than one region: none
+PREDICTION (harness)
+  asked 24  declined 0  hits 24  accuracy 1.000
+PREDICTION (B1 raw-prefix NN, same K/cut/memory)
+  answered 24  hits 24  accuracy 1.000
+PREDICTION (B0 exact-suffix longest match, floor)
+  answered 0  hits 0  accuracy 0.000
+PAIRED (both answer)
+  positions 24  harness 1.000  B1 1.000  delta +0.000
+CLAIMS
+  S1 six classes of 8 at a gap >= 2.00, no cross-region merge: PASS
+  S2 region-to-class bijection, no composite label: PASS
+  P1 harness accuracy >= 0.80: PASS (1.000)
+  P2 harness >= B1 + 0.10 on paired positions: FAIL (1.000 vs 1.000; answered 24 vs 24)
+  P3 B0 floor: reported, not a pass bar (answered 0)
+
+--- separate reading ---
+STRUCTURE
+  states 48  episodes 8  classes 6  sizes [8, 8, 8, 8, 8, 8]
+  gap ratio 26.433  lo 0.004757  hi 0.125738  cut 0.065247
+  class -> authored region(s): {0: ['A0'], 1: ['B0'], 2: ['A1'], 3: ['B1'], 4: ['A2'], 5: ['B2']}
+  classes spanning more than one region: none
+PREDICTION (harness)
+  asked 20  declined 4  hits 20  accuracy 1.000
+PREDICTION (B1 raw-prefix NN, same K/cut/memory)
+  answered 20  hits 20  accuracy 1.000
+PREDICTION (B0 exact-suffix longest match, floor)
+  answered 0  hits 0  accuracy 0.000
+PAIRED (both answer)
+  positions 20  harness 1.000  B1 1.000  delta +0.000
+CLAIMS
+  S1 six classes of 8 at a gap >= 2.00, no cross-region merge: PASS
+  S2 region-to-class bijection, no composite label: PASS
+  P1 harness accuracy >= 0.80: PASS (1.000)
+  P2 harness >= B1 + 0.10 on paired positions: FAIL (1.000 vs 1.000; answered 20 vs 20)
+  P3 B0 floor: reported, not a pass bar (answered 0)
+
+E2 is decided on the joined reading (e2-prereg.md).
+E2 FAIL
+Separate reading reported alongside; it does not decide the rung.

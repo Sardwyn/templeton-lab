@@ -1,7 +1,9 @@
 # E3 pre-registration — coordinate-disjoint families, and what "same shape" can mean
 
-**PROVISIONAL. Not frozen until Brad rules on the redefinition in §Open
-decision.** No E3 feed has been run. The mechanism is frozen by `FREEZE.md`.
+**FROZEN 2026-11-09, after Brad's ruling: the coordinate-disjoint redefinition
+is accepted, and its expected negative will be recorded as a finding about the
+missing delta-shape operator.** No E3 feed had been run when this was frozen.
+The mechanism is frozen by `FREEZE.md`.
 
 ## The problem with E3 as first stated
 
@@ -144,13 +146,14 @@ Rules:
   authored.
 - It does not test scale. That is E4.
 
-## Open decision (Brad's ruling required)
+## Ruling (2026-11-09)
 
-2. **Redefinition.** Recommended: accept that the original E3 is a no-op under
-   P1, adopt the coordinate-disjoint version above, and record its expected
-   negative as a finding about the missing operator. If Brad prefers, E3 can be
-   dropped rather than run in a form whose pass condition is known to be
-   unreachable; it should not be run in its original vacuous form.
+Brad ruled: **accept the coordinate-disjoint redefinition.** The original E3 is
+vacuous under P1 because mean absolute deviation is permutation-invariant, so a
+pure component permutation cannot be a test. The redefinition above is the
+frozen E3. Its expected negative — (b) or (c), not (a) — is recorded as a
+finding about the missing operator over delta shape, not as a defect to repair
+inside this rung. Dropping E3 was the alternative; it was not chosen.
 
 ## Run protocol
 
