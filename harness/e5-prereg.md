@@ -154,3 +154,43 @@ hash; the first attempt stays on the record.
 - `e5.py` and this vocabulary are frozen now.
 - Feed: **pending Brad**. Place it at `F:\Lab\harness\feeds\` and send the path;
   the runner will print and record its hash before running.
+
+## Post-hoc diagnosis (added 2026-11-09, after the run — E5-D)
+
+Per the failed-claim rule, this section was appended after the run; it is a
+diagnosis, not a pass. The feed and every E5 number above are unchanged.
+
+The follow-up question was whether the global cut is a stable property of the
+observations or a temporary property of the current sample. The diagnostic
+`e5d-prereg.md` / `e5d.py` replayed this feed one observation at a time under
+the frozen `Harness` (fresh instance per prefix, consistency checks C1–C4 all
+pass; `e5d-out.txt`):
+
+- The cut was admissible only at **p = 23..24 of 30** prefixes.
+  Stretches: p 1..22 no, p 23..24 yes, p 25..30 no.
+- **Gained at p=23:** observation ep7.pos1 `[0.57, 0.47, 0.62, 0.62]` arrived
+  with its own nearest-neighbour distance **0.0075** — a near-duplicate of
+  ep5.pos2 `[0.58, 0.46, 0.63, 0.62]`. That opened the window 0.0075..0.0200 at
+  ratio **2.667** (≥ GAP).
+- **Lost at p=25:** the first held observation ep8.pos0
+  `[0.16, 0.81, 0.21, 0.27]` arrived with its own nearest-neighbour distance
+  **0.0125** — a near-duplicate of ep0.pos0 — landing strictly **inside** the
+  old window. The best ratio fell to 1.667 and the gap died.
+- At neither event did any earlier observation's nearest-neighbour distance
+  change: the arriving observation alone caused each flip.
+- The feed's seasonal continuum never approached GAP = 2.0 on its own: the best
+  ratio was ≤ 1.5 through p = 22 and 1.6–1.667 after; the admissible prefixes
+  compressed 24 observations into 21–22 classes, i.e. the cut grouped only
+  near-duplicates.
+- Exact repeats (NN = 0.0, present from p = 11) are skipped by the `lo ≤ EPS`
+  rule and never open a window.
+- The cut was identical under a joined-reading replay at every prefix (C4), so
+  this is not an episode-boundary artifact.
+
+**Answer, scoped to this feed:** the global cut was a temporary property of the
+sample — created by one near-duplicate and destroyed by another. E5's probe was
+asked at p = 24, inside the only admissible window, and named the
+near-duplicate class; that class had exactly one observed continuation, which is
+why `probe_support` failed (1 < 2). Whether any cut can be stable on a
+continuum feed at GAP = 2.0 is a v0.2 question; nothing here was changed to
+make it one.

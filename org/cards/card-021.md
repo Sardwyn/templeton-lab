@@ -6,7 +6,7 @@ assignee: qwen
 project: emergent-harness
 depends_on: [card-020]
 created_at: 2026-11-09T01:28
-updated_at: 2026-11-09T03:10
+updated_at: 2026-11-09T03:30
 ---
 
 Each rung is pre-registered before its run and each is allowed to fail. One
@@ -143,6 +143,36 @@ No feed value was changed and no claim was dropped. A second attempt is E5b with
 a new feed hash and its own pre-registration; this feed and output stay on the
 record. See `harness/e5-prereg.md` and `harness/e5-out.txt`.
 
+## E5-D — diagnostic: cut stability trajectory (DONE, 2026-11-09)
+
+Brad's follow-up question: is the global cut a stable property of the
+observations, or a temporary property of the current sample? Frozen in
+`harness/e5d-prereg.md` before the run; run once by `harness/e5d.py` ->
+`e5d-out.txt` + `e5d.json`; consistency checks C1–C4 all PASS (feed hash,
+p=24 probe facts, p=30 completed-feed facts, reading-independence at every
+prefix). This is a diagnosis, not a capability verdict; nothing was repaired.
+
+Findings:
+
+- Admissible only at **p = 23..24 of 30** (stretches: 1..22 no, 23..24 yes,
+  25..30 no).
+- **Gained at p=23:** ep7.pos1 arrived with its own NN 0.0075 (near-duplicate of
+  ep5.pos2); window 0.0075..0.0200 opened at ratio 2.667.
+- **Lost at p=25:** ep8.pos0 — the first held observation — arrived with its own
+  NN 0.0125 (near-duplicate of ep0.pos0), landing strictly inside the old
+  window; best ratio fell to 1.667.
+- No earlier observation's NN distance changed at either event: the arriving
+  observation alone caused each flip.
+- The seasonal continuum never approached GAP = 2.0 on its own (best ratio
+  ≤ 1.5 before the near-duplicates, 1.6–1.667 after); the admissible cut grouped
+  only near-duplicates (21–22 classes over 24 observations).
+- E5's probe was asked at p = 24 — inside the only admissible window — and named
+  the near-duplicate class, whose single observed continuation is why
+  `probe_support` failed.
+
+Answer, scoped to this feed: the cut was a temporary property of the sample,
+created by one near-duplicate and destroyed by another.
+
 ## Discipline
 
 `FREEZE.md` is the contract: fixed hashes, P0-P6 verbatim, P0 flagged as the
@@ -152,8 +182,10 @@ modules; it may not edit them.
 
 **Artifacts:** `harness/FREEZE.md`, `harness/e2-prereg.md`,
 `harness/e3-prereg.md`, `harness/e4-prereg.md`, `harness/e5-prereg.md`,
+`harness/e5d-prereg.md`,
 `harness/e1b.py`, `harness/e1b-out.txt`, `harness/e3.py`, `harness/e3-out.txt`,
 `harness/e4.py`, `harness/e4-out.txt`, `harness/e4.json`, `harness/e5.py`,
 `harness/e5.py.sha256`, `harness/feeds/README.md`,
 `harness/feeds/brad_e5.json`, `harness/e5-out.txt`,
-`harness/e5-e5-brad-weather-001.json`.
+`harness/e5-e5-brad-weather-001.json`, `harness/e5d.py`, `harness/e5d-out.txt`,
+`harness/e5d.json`.

@@ -95,6 +95,8 @@ e5.py         E5 runner (frozen before any feed; hash in e5.py.sha256)
 feeds/        Brad's blind feed + its README; brad_e5.json is the first feed
 e5-out.txt    E5 output (FAIL -- no gap on the completed feed)
 e5-e5-brad-weather-001.json   E5 machine record
+e5d-prereg.md the cut-stability diagnostic, frozen before its run
+e5d.py        E5-D runner   e5d-out.txt   trajectory; e5d.json per-prefix records
 out.txt       full run output (20 scenario x reading runs)
 sweep.txt     the same, plus the cut-moved report
 RESULTS.md    what the run measured, three findings, the E1 outcome
@@ -125,6 +127,15 @@ allowed to fail.
 | E3 | Does relational structure survive a coordinate transformation? | **FAIL (outcome d)** — 6 classes, no transfer in the primary separate reading; joined reading transfers 3/3 (outcome c); v0.1 groups by proximity, not delta shape |
 | E4 | Does the cut survive n=500 and dim=16, or is 1.987-vs-2.0 a small-n accident? | **FAIL on power** — null side clean (FPR 1/750, Wilson upper 0.0075) but structured cut-inside 0.00-0.02 vs a 0.80 bar; cross-cutting |
 | E5 | Can the result survive a feed authored by Brad? | **FAIL** — 0 classes, no gap, 0/6 held positions answered; the pre-holdout probe named a class, but the completed feed's cut was erased |
+
+E5-D (`e5d-prereg.md`, run by `e5d.py`) replayed Brad's feed one observation at
+a time and answered the follow-up question — is the cut a property of the
+observations or of the sample? Admissible only at p = 23..24 of 30; created by
+one near-duplicate (p = 23, own NN 0.0075) and destroyed by another (p = 25,
+own NN 0.0125 landing inside the window); no earlier observation's
+nearest-neighbour distance changed at either event; the seasonal continuum never
+approached GAP = 2.0 on its own. On this feed the cut was a temporary property
+of the sample. Diagnosis only — nothing was repaired.
 
 A pass on E1b does not make E1 a pass. E1's original claim set stays FAIL on
 the record; E1b closes the definition, and the two-ended-stream artifact is now

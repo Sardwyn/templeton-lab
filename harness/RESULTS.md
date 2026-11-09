@@ -255,6 +255,41 @@ claim was dropped.
 A second attempt is E5b with a new feed hash and its own pre-registration; this
 feed and its output stay on the record.
 
+## E5-D — diagnostic: is the cut a property of the observations, or of the sample?
+
+Frozen in `e5d-prereg.md` before its run; run once, unchanged:
+`python harness/e5d.py` → `e5d-out.txt`, `e5d.json`. Same feed bytes, same
+frozen modules, fresh `Harness` per prefix, one observation at a time. All four
+consistency checks passed: C1 feed hash matches the feed E5 ran; C2 the p = 24
+replay reproduces the E5 probe-time facts (`classify` = 1, support = 1,
+context `(0, 1)`, k = 2); C3 the p = 30 replay reproduces the completed feed
+(gap `None`, 0 classes); C4 gap and cut are identical under a joined-reading
+replay at every prefix, so episode boundaries do not move the cut.
+
+**Admissibility stretches:** p 1..22 no — p 23..24 **yes** — p 25..30 no.
+
+| event | prefix | observation | its own NN | effect |
+|---|---|---|---|---|
+| cut gained | p = 23 | ep7.pos1 `[0.57, 0.47, 0.62, 0.62]` | **0.0075** (near-duplicate of ep5.pos2) | opens window 0.0075..0.0200, ratio **2.667** |
+| cut lost | p = 25 | ep8.pos0 `[0.16, 0.81, 0.21, 0.27]` (first held obs) | **0.0125** (near-duplicate of ep0.pos0) | lands strictly inside the old window; best ratio falls to 1.667 |
+
+At neither event did any earlier observation's nearest-neighbour distance
+change — the arriving observation alone caused each flip. Exact repeats
+(NN = 0.0, present from p = 11) are skipped by the `lo ≤ EPS` rule and never
+open a window.
+
+The feed's seasonal continuum never approached GAP = 2.0 on its own: the best
+ratio was ≤ 1.5 through p = 22, and 1.6–1.667 after. At the admissible prefixes
+the cut compressed 24 observations into 21–22 classes — it grouped only
+near-duplicates, none of the cycle.
+
+**Answer, scoped to this feed:** the global cut was a temporary property of the
+current sample, created by one near-duplicate and destroyed by another. E5's
+probe was asked at p = 24, inside the only admissible window, and named the
+near-duplicate class — whose single observed continuation is exactly why
+`probe_support` failed. This is a diagnosis; nothing was repaired and no frozen
+module changed.
+
 ## Evidence file
 
 `evidence.json` holds `priors`, `thresholds` (reader-side: accuracy 0.80, fan 3,

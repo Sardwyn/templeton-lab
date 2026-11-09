@@ -6,7 +6,7 @@ owner: brad
 repo:
 path: F:\Lab\harness
 memory_cell: project-emergent-harness
-updated_at: 2026-11-09T03:10
+updated_at: 2026-11-09T03:30
 ---
 
 **What it is:** a minimal system fed only state (numbers), difference,
@@ -53,7 +53,7 @@ attacks a different source of false confidence at each rung.
 | **E2** | Can recurrence predict through fixed-lag interleaving beyond a raw-prefix nearest-neighbour lookup with the same information? | **FAIL 2026-11-09** — structure and the harness's own prediction pass, but B1 ties at 1.000; the feed is periodic at K=3. See `harness/e2-prereg.md`. |
 | **E3** | Does relational structure survive a coordinate transformation? | **FAIL 2026-11-09 (outcome d)** — 6 classes, no transfer in the primary separate reading; joined reading transfers 3/3 (outcome c). v0.1 groups by state proximity, not delta shape. See `harness/e3-prereg.md`. |
 | **E4** | Does the cut survive n up to 500 and 16 dimensions, or is 1.987-vs-2.0 a small-n accident? | **FAIL 2026-11-09 on power** — null side clean (FPR 1/750, Wilson upper 0.0075), but structured cut-inside is 0.00-0.02 against a 0.80 bar. **Cross-cutting validity test.** See `harness/e4-prereg.md`. |
-| **E5** | Can the results survive a feed authored by Brad, not by the system's author? | **FAIL 2026-11-09** — blind feed ran once: 0 classes, no gap, 0/6 held positions answered; pre-holdout probe named a class, but adding the held data erased the cut. See `harness/e5-prereg.md`. |
+| **E5** | Can the results survive a feed authored by Brad, not by the system's author? | **FAIL 2026-11-09** — blind feed ran once: 0 classes, no gap, 0/6 held positions answered; pre-holdout probe named a class, but adding the held data erased the cut. See `harness/e5-prereg.md`. **E5-D diagnostic:** admissible only at p = 23..24 of 30 — created and destroyed by near-duplicates, not by the cycle. |
 
 E4 runs in its numbered position but its result is applied to how E2 and E3 are
 read. A failure in E4 does not retroactively pass or fail them; it changes what
@@ -89,6 +89,17 @@ recomputed from all memory on every call, so adding data can erase a separation
 that was there. That is the honest negative E5 existed to return, and it is not
 repaired by editing the feed or the claims. A second attempt is E5b with a new
 feed hash and its own pre-registration.
+
+E5-D (a diagnostic, frozen in `harness/e5d-prereg.md` before its run) answered
+Brad's follow-up question on this feed: the cut was admissible only at p = 23..24
+of 30 prefixes. It was created by one near-duplicate observation (p = 23, own
+NN 0.0075) and destroyed by another (p = 25, own NN 0.0125 landing strictly
+inside the window); no earlier observation's nearest-neighbour distance changed
+at either event, the seasonal continuum never approached GAP = 2.0 on its own
+(best ratio ≤ 1.5 before the duplicates), and the cut was reading-independent at
+every prefix. E5's probe was asked inside the only admissible window and named
+the near-duplicate class. On this feed the global cut was a temporary property
+of the sample, not a stable property of the observations. Nothing was repaired.
 
 ## Three definitional findings (ruled 2026-11-09)
 
@@ -130,5 +141,8 @@ instead. E5 is the only rung that removes the feed's author.
 `harness/e2-prereg.md`, `harness/e3-prereg.md`, `harness/e4-prereg.md`,
 `harness/e5-prereg.md`, `harness/e3.py`, `harness/e3-out.txt`, `harness/e4.py`,
 `harness/e4-out.txt`, `harness/e4.json`, `harness/e5.py`,
-`harness/e5.py.sha256`, `harness/feeds/README.md`, `harness/out.txt`,
-`harness/sweep.txt`.
+`harness/e5.py.sha256`, `harness/feeds/README.md`,
+`harness/feeds/brad_e5.json`, `harness/e5-out.txt`,
+`harness/e5-e5-brad-weather-001.json`, `harness/e5d-prereg.md`,
+`harness/e5d.py`, `harness/e5d-out.txt`, `harness/e5d.json`,
+`harness/out.txt`, `harness/sweep.txt`.
