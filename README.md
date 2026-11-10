@@ -19,8 +19,23 @@ traced rather than remembered:
 
 `state/` holds the **generated views** — `BOARD.md`, `BRIEF.md`, `RECALL.md`.
 They are rebuilt at every check-in and are never sources of truth, so they are
-not committed. The dashboard is generated on request too
-(`python worker/serve.py` → http://localhost:8901).
+not committed. The dashboard is generated on request. From the repo root
+(on the HQ box that is `F:\Lab`):
+
+    python worker/serve.py
+
+Then open http://localhost:8901 . The server uses the checkout that contains
+`worker/serve.py`, so the same command works in that folder and in any other
+clone. The page is the control surface: a board of cards (status, owner,
+priority, due date, grouped by status, project, or agent) and a thread per
+project and per agent, built from `org/inbox/` (including `done/`) and
+`org/events/`. Saving a card updates that card's frontmatter and appends one
+event line. Posting a message writes a new file in `org/inbox/<recipient>/`
+and appends a `message` event. Posting a note appends a `note` event. Nothing
+is deleted, event lines are not rewritten, and `org/decisions/` is not
+editable from the page. `python worker/dashboard.py` still regenerates
+`dashboard/index.html`, `state/BOARD.md`, and `state/PROJECTS.md` without
+starting the server.
 
 ## Two repositories
 

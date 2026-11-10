@@ -1,10 +1,15 @@
-"""Templeton Systems dashboard generator (v2 — tabs + detail drawers).
+"""Templeton Systems dashboard generator.
 
-Generates F:\\Lab\\dashboard\\index.html — self-contained (no external deps,
-works from file:// or via worker/serve.py). Also writes the plain-text
-board to F:\\Lab\\state\\BOARD.md for tools that read markdown.
+Generates dashboard/index.html — self-contained (no external deps, works from
+file:// or via worker/serve.py). Also writes the plain-text board to
+state/BOARD.md for tools that read markdown. The root is the checkout that
+contains this file (F:\\Lab on the HQ box).
 
-Tabs (hash-routed): board | projects | pings | roster | decisions | builds | events
+The board groups cards by status, project, or agent. Threads are a timeline
+per project and per agent. Writes (card saves, notes, messages) are done by
+worker/serve.py through worker/mutate.py; this module only renders.
+
+Tabs (hash-routed): board | threads | projects | pings | roster | decisions | builds | events
 Projects: `#proj/<id>` opens a per-project page — deliverables (org/notes/*.md),
 cards, builds, decisions (by mention), the project's memory cell, and events
 scoped by ctx refs.
@@ -20,7 +25,17 @@ import json
 import re
 from pathlib import Path
 
-LAB = Path(r"F:\Lab")
+try:
+    from labroot import lab_root
+except ImportError:  # imported as worker.dashboard
+    from worker.labroot import lab_root
+
+try:
+    import hq_render
+except ImportError:
+    from worker import hq_render
+
+LAB = lab_root()
 ORG = LAB / "org"
 STATE = LAB / "state"
 TRANSPORT = LAB / "transport"
@@ -36,7 +51,7 @@ COLUMN_RANK = {name: i for i, name in enumerate(COLUMNS)}
 # memory cell is labelled with its FULL path and links to the file itself.
 
 INDEX_DIRS = ("org", "memory", "state", "worker", "transport", "dashboard",
-              "trials")
+              "trials", "harness")
 SKIP_PARTS = {".git", "__pycache__", "swarm", "node_modules", ".venv"}
 LINK_EXTS = {"md", "jsonl", "json", "html", "py", "log", "yaml", "yml", "txt",
              "css", "js"}
@@ -73,11 +88,20 @@ for _rel in FILE_INDEX:
 
 
 def win_path(rel):
-    r"""The full Windows path used as the label of every artifact link."""
-    s = str(rel).replace("/", "\\")
-    if s.lower().startswith("f:\\lab\\"):
-        s = s[len("f:\\lab\\"):].lstrip("\\")
-    return "F:\\Lab\\" + s
+    """Full path of an artifact, the way this checkout is opened.
+
+    On the HQ box that is F:\\\\Lab\\\\... (decision-010). A label is never
+    invented for a different machine than the one that built the page.
+    """
+    raw = str(rel).strip().strip('"').strip("'")
+    flat = raw.replace("\\", "/")
+    lower = flat.lower()
+    if lower.startswith("f:/lab/"):
+        flat = flat[len("f:/lab/"):]
+    lab_flat = str(LAB).replace("\\", "/")
+    if flat.lower().startswith(lab_flat.lower() + "/"):
+        flat = flat[len(lab_flat):].lstrip("/")
+    return str((LAB / flat.lstrip("/")).resolve())
 
 
 def flatten(token):
@@ -318,6 +342,39 @@ def load_inboxes():
     return result
 
 
+def load_thread_messages():
+    """Every inbox file, including messages already moved to done/."""
+    msgs = []
+    inbox = ORG / "inbox"
+    if not inbox.exists():
+        return msgs
+    for path in sorted(inbox.rglob("*.md")):
+        fields, body = load_msg(path)
+        fields = fields or {}
+        rel_parts = path.relative_to(inbox).parts
+        owner = rel_parts[0] if rel_parts else ""
+        match = re.match(r"(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})", path.name)
+        if match:
+            year, month, day, hour, minute = match.groups()
+            ts = "%s-%s-%sT%s:%s" % (year, month, day, hour, minute)
+        else:
+            ts = ""
+        msgs.append({
+            "rel": path.relative_to(LAB).as_posix(),
+            "owner": owner,
+            "from": fields.get("from", "?"),
+            "to": fields.get("to") or owner,
+            "subject": fields.get("subject") or path.stem,
+            "body": body,
+            "card": (fields.get("card") or "").strip(),
+            "project": (fields.get("project") or "").strip(),
+            "activate": str(fields.get("activate", "")).lower() == "true",
+            "done": "done" in rel_parts,
+            "ts": ts,
+        })
+    return msgs
+
+
 def load_decisions():
     out = []
     ddir = ORG / "decisions"
@@ -538,6 +595,26 @@ def event_detail(e):
     return body
 
 
+def event_pointer_html(e):
+    """The artifact an event points at, without the event's own note text."""
+    if e.get("repo"):
+        repo = str(e["repo"])
+        sha = str(e.get("commit") or "").strip()
+        if "/" not in repo:
+            return esc(repo)
+        href = "https://github.com/%s" % repo
+        label = repo
+        if sha:
+            href = "%s/commit/%s" % (href, sha)
+            label = "%s @ %s" % (repo, sha[:7])
+        return "<a class='fp' href='%s' target='_blank' rel='noopener'>%s</a>" % (
+            esc(href), esc(label))
+    tok = event_ref(e)
+    if not tok:
+        return ""
+    return ref_cell(tok)
+
+
 def event_ref_html(e):
     """Ref column: the artifact an event points at as a full-path link (a repo
     ref links to the commit it pushed, so two push rows are distinguishable),
@@ -545,20 +622,10 @@ def event_ref_html(e):
     that genuinely does not exist."""
     detail = event_detail(e)
     tail = "<span class='det'>%s</span>" % linkify(esc(detail)) if detail else ""
-    if e.get("repo"):
-        repo = str(e["repo"])
-        sha = str(e.get("commit") or "").strip()
-        if "/" not in repo:
-            return esc(repo) + tail
-        href = "https://github.com/%s" % repo
-        label = repo
-        if sha:
-            href = "%s/commit/%s" % (href, sha)
-            label = "%s @ %s" % (repo, sha[:7])
-        return "<a class='fp' href='%s' target='_blank' rel='noopener'>%s</a>" % (
-            esc(href), esc(label)) + tail
-    tok = event_ref(e)
-    return (ref_cell(tok) if tok else "\u2014") + tail
+    ptr = event_pointer_html(e)
+    if not ptr and not tail:
+        return "\u2014"
+    return (ptr or "\u2014") + tail
 
 
 def md_lite(text):
@@ -580,15 +647,14 @@ def build_page():
     now = datetime.datetime.now()
     cards = load_md_with_body(ORG / "cards")
     for c in cards:
-        c["column"] = c.get("column", "backlog")
-        if c["column"] not in KNOWN_COLUMNS:
-            c["column"] = "backlog"
+        c["column"] = (c.get("column") or "backlog").strip() or "backlog"
     agents = load_md_with_body(ORG / "agents")
     builds = load_md_with_body(ORG / "builds")
     builds.sort(key=lambda b: (b.get("ts", ""), b.get("id", "")), reverse=True)
     events = load_events()
     pings = load_pings()
     inboxes = load_inboxes()
+    thread_messages = load_thread_messages()
     decisions = load_decisions()
     memory = load_memory()
     projects = load_projects()
@@ -645,40 +711,20 @@ def build_page():
                 val["win"] = win_path(val["path"])
     artifacts_json = json.dumps(artifacts).replace("</", "<\\/")
 
-    # ---- Board tab ----
-    col_html = []
-    for col in COLUMNS:
-        items = [c for c in cards if c.get("column") == col]
-        cards_html = []
-        for c in items:
-            deps = []
-            for d in c.get("depends_on", "").replace("]", "").replace("[", "").split(","):
-                d = d.strip().strip('"').strip()
-                if d:
-                    deps.append(d)
-            dep_html = ""
-            if deps:
-                dep_html = ('<div class="deps">deps: '
-                            + " &middot; ".join(ref_cell(d) for d in deps) + "</div>")
-            cards_html.append(
-                '<div class="card clickable col-%s" data-kind="card" data-id="%s">'
-                '<div class="card-head"><span class="assignee">%s</span></div>'
-                '<div class="cid">%s</div>'
-                '<div class="card-title">%s</div>'
-                '<div class="card-meta">updated %s</div>'
-                "%s"
-                "</div>"
-                % (col.replace("-", ""), esc(c.get("id", "?")),
-                   esc(c.get("assignee", "unassigned")), ref_cell(c.get("id", "?")),
-                   esc(c.get("title", "(no title)")),
-                   esc(c.get("updated_at", "?")), dep_html)
-            )
-        col_html.append(
-            '<div class="kcol">'
-            '<div class="kcol-head">%s <span class="kcount">%d</span></div>'
-            '<div class="kcards">%s</div>'
-            "</div>" % (col, len(items), "\n".join(cards_html) or '<div class="empty">—</div>')
-        )
+    # ---- Board + threads (rendered; writes go through serve.py) ----
+    board_intro, board_views = hq_render.board_views(
+        cards, projects, agents, ref_cell, esc, now.date())
+    thread_panes = hq_render.thread_panes(
+        cards, projects, agents, all_events, thread_messages,
+        ref_cell, esc, linkify, event_pointer_html, names, project_of)
+    actor_options = []
+    for agent in agents:
+        aid = agent.get("id") or ""
+        if not aid:
+            continue
+        selected = " selected" if aid == "brad" else ""
+        actor_options.append("<option value='%s'%s>%s</option>" % (
+            esc(aid), selected, esc(agent.get("name") or aid)))
 
     # ---- Pings tab ----
     pings_html = []
@@ -829,14 +875,16 @@ def build_page():
 
         proj_rows.append(
             "<tr class='clickable' data-kind='project' data-id='%s'>"
-            "<td><a href='#proj/%s'>%s</a></td><td class='%s'>%s</td><td>%s</td>"
+            "<td><a href='#proj/%s'>%s</a> · <a href='#thread/project/%s'>thread</a></td>"
+            "<td class='%s'>%s</td><td>%s</td>"
             "<td>%d open / %d done</td><td>%d pass / %d fail</td><td>%d</td><td>%d</td></tr>"
-            % (esc(pid), esc(pid), esc(pr.get("title") or pid), chip, esc(st), repo_html,
+            % (esc(pid), esc(pid), esc(pr.get("title") or pid), esc(pid), chip, esc(st), repo_html,
                len(pcards) - done, done, passed, failed, len(pnotes), len(pevents)))
 
         pan = ["<section class='pane' data-pane='proj/%s'>" % esc(pid)]
         pan.append("<div class='crumb'><a href='#projects'>&larr; Projects</a>"
-                   " &middot; %s</div>" % esc(pid))
+                   " · <a href='#thread/project/%s'>Thread</a>"
+                   " · %s</div>" % (esc(pid), esc(pid)))
         pan.append("<h2>%s <span class='%s'>[%s]</span></h2>"
                    % (esc(pr.get("title") or pid), chip, esc(st)))
         pan.append("<div class='sub'>owner %s &middot; %s &middot; source %s"
@@ -933,10 +981,14 @@ def build_page():
         proj_panes.append("\n".join(pan))
 
     ts = now.strftime("%Y-%m-%d %H:%M:%S")
-    html = HTML_TEMPLATE % {
+    html = (HTML_TEMPLATE % {
         "ts": ts,
+        "root": esc(LAB),
         "artifacts": artifacts_json,
-        "board": "\n".join(col_html),
+        "board_intro": board_intro,
+        "board_views": board_views,
+        "thread_panes": thread_panes,
+        "actor_options": "".join(actor_options),
         "projects": "\n".join(proj_rows) or "<tr><td colspan='7'>no org/projects/*.md files yet</td></tr>",
         "notes": "\n".join(note_rows) or "<tr><td colspan='2'>no org/notes/*.md files yet</td></tr>",
         "project_panes": "\n\n".join(proj_panes),
@@ -947,7 +999,7 @@ def build_page():
         "memory": "\n".join(mem_rows) or "<tr><td colspan='5'>no memory yet</td></tr>",
         "builds": "\n".join(build_rows) or "<tr><td colspan='5'>no builds recorded yet</td></tr>",
         "events": "\n".join(event_rows) or "<tr><td colspan='5'>no events yet</td></tr>",
-    }
+    }).replace("/*__EXTRA_CSS__*/", hq_render.EXTRA_CSS)
 
     DASHBOARD.mkdir(parents=True, exist_ok=True)
     (DASHBOARD / "index.html").write_text(html, encoding="utf-8")
@@ -958,16 +1010,24 @@ def generate_board():
     """Plain-text board for agents (kept for tools that read markdown)."""
     cards = load_md_with_body(ORG / "cards")
     for c in cards:
-        c["column"] = c.get("column", "backlog")
-        if c["column"] not in KNOWN_COLUMNS:
-            c["column"] = "backlog"
+        c["column"] = (c.get("column") or "backlog").strip() or "backlog"
+    columns = list(COLUMNS)
+    for c in cards:
+        if c["column"] not in columns:
+            columns.append(c["column"])
     lines = ["# Templeton Board\n"]
-    for col in COLUMNS:
+    for col in columns:
         items = [c for c in cards if c.get("column") == col]
         lines.append("## %s" % col)
         for c in items:
-            lines.append("- **%s**: %s (assignee: %s)"
-                         % (c.get("id", "?"), c.get("title", ""), c.get("assignee", "-")))
+            bits = ["assignee: %s" % (c.get("assignee") or "-"),
+                    "project: %s" % (c.get("project") or "-")]
+            if c.get("priority"):
+                bits.append("priority: %s" % c["priority"])
+            if c.get("due"):
+                bits.append("due: %s" % c["due"])
+            lines.append("- **%s**: %s (%s)"
+                         % (c.get("id", "?"), c.get("title", ""), ", ".join(bits)))
         lines.append("")
     STATE.mkdir(parents=True, exist_ok=True)
     (STATE / "BOARD.md").write_text("\n".join(lines), encoding="utf-8")
@@ -978,9 +1038,7 @@ def generate_projects():
     projects = load_projects()
     cards = load_md_with_body(ORG / "cards")
     for c in cards:
-        c["column"] = c.get("column", "backlog")
-        if c["column"] not in KNOWN_COLUMNS:
-            c["column"] = "backlog"
+        c["column"] = (c.get("column") or "backlog").strip() or "backlog"
     builds = load_md_with_body(ORG / "builds")
     events = load_events(limit=None)
     project_of = project_scopes(projects, cards, builds)
@@ -1004,9 +1062,14 @@ def generate_projects():
                      % (len(open_cards), len(pcards) - len(open_cards),
                         "" if open_cards else " (nothing open)"))
         for c in sorted(open_cards, key=lambda c: c.get("id", "")):
-            lines.append("  - %s [%s]: %s" % (c.get("id", "?"),
-                                              c.get("column", "?"),
-                                              c.get("title", "")))
+            extra = ""
+            if c.get("priority"):
+                extra += ", priority %s" % c["priority"]
+            if c.get("due"):
+                extra += ", due %s" % c["due"]
+            lines.append("  - %s [%s]: %s%s" % (c.get("id", "?"),
+                                                c.get("column", "?"),
+                                                c.get("title", ""), extra))
         lines.append("- builds: %d pass / %d fail | current streak: %s"
                      % (sum(1 for b in pbuilds if b.get("status") == "pass"),
                         sum(1 for b in pbuilds if b.get("status") == "fail"),
@@ -1127,14 +1190,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   pre.cell { background: #10151c; border: 1px solid var(--border); border-radius: 8px;
              padding: 14px; white-space: pre-wrap; margin: 0 0 6px; max-width: 900px; }
   .refresh-note { position: fixed; bottom: 14px; right: 20px; color: var(--dim); font-size: 11px; }
+/*__EXTRA_CSS__*/
 </style>
 </head>
 <body>
 <h1>Templeton Systems <span style="color:var(--dim);font-weight:400">— Org Dashboard</span></h1>
-<div class="sub">generated %(ts)s &nbsp;·&nbsp; F:\\Lab &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#projects">Projects</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#decisions">Decisions</a> · <a href="#memory">Memory</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a></div>
+<div class="sub">generated %(ts)s &nbsp;·&nbsp; %(root)s &nbsp;·&nbsp; <a href="#board">Board</a> · <a href="#threads">Threads</a> · <a href="#projects">Projects</a> · <a href="#pings">Pings</a> · <a href="#roster">Roster</a> · <a href="#decisions">Decisions</a> · <a href="#memory">Memory</a> · <a href="#builds">Builds</a> · <a href="#events">Events</a>
+<label class="acting">Acting as <select id="actor">%(actor_options)s</select></label></div>
 
 <nav class="tabs">
   <a href="#board" class="tab" data-tab="board">Board</a>
+  <a href="#threads" class="tab" data-tab="threads">Threads</a>
   <a href="#projects" class="tab" data-tab="projects">Projects</a>
   <a href="#pings" class="tab" data-tab="pings">Pings</a>
   <a href="#roster" class="tab" data-tab="roster">Roster</a>
@@ -1144,12 +1210,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <a href="#events" class="tab" data-tab="events">Events</a>
 </nav>
 
-<section class="pane" data-pane="board">
-<h2>Kanban</h2>
-<div class="board">
-%(board)s
-</div>
+<section class="pane active" data-pane="board">
+<h2>Board</h2>
+<p class="sub">%(board_intro)s</p>
+%(board_views)s
 </section>
+
+%(thread_panes)s
 
 <section class="pane" data-pane="projects">
 <h2>Projects</h2>
@@ -1217,7 +1284,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <section class="pane" data-pane="events">
 <h2>Recent Events</h2>
-<p class="sub">newest first, last 20 of the log — project column resolved from ctx refs</p>
+<p class="sub">newest first, last 20 of the log — the full timeline is under Threads</p>
 <table>
 <tr><th>TS</th><th>Agent</th><th>Type</th><th>Ref</th><th>Project</th></tr>
 %(events)s
@@ -1258,7 +1325,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.querySelectorAll('.pane').forEach(function (p) {
       p.classList.toggle('active', p.getAttribute('data-pane') === name);
     });
-    var tab = name.indexOf('proj/') === 0 ? 'projects' : name;
+    var tab = name.indexOf('proj/') === 0 ? 'projects'
+            : (name === 'threads' || name.indexOf('thread/') === 0) ? 'threads'
+            : name;
     tabs.forEach(function (t) {
       t.classList.toggle('active', t.getAttribute('data-tab') === tab);
     });
@@ -1266,9 +1335,41 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   function fromHash() {
     var h = location.hash.replace('#', '') || 'board';
     activate(document.querySelector('.pane[data-pane="' + h + '"]') ? h : 'board');
+    // The timeline is display:none until this call, so scrolling in the same
+    // turn is ignored. Wait until it has a height.
+    setTimeout(function () {
+      var timeline = document.querySelector('.pane.active .timeline');
+      if (timeline) timeline.scrollTop = timeline.scrollHeight;
+    }, 0);
   }
   window.addEventListener('hashchange', fromHash);
   fromHash();
+
+  var actorSel = document.getElementById('actor');
+  function syncActor() {
+    if (!actorSel) return;
+    var v = actorSel.value;
+    document.querySelectorAll('input[name="actor"]').forEach(function (el) { el.value = v; });
+  }
+  if (actorSel) actorSel.addEventListener('change', syncActor);
+  document.addEventListener('submit', function () { syncActor(); }, true);
+  var doneBox = document.getElementById('show-done');
+  var radios = document.querySelectorAll('input[name="board-view"]');
+  if (doneBox && window.localStorage) {
+    if (localStorage.getItem('hq-show-done') === '1') doneBox.checked = true;
+    doneBox.addEventListener('change', function () {
+      localStorage.setItem('hq-show-done', doneBox.checked ? '1' : '0');
+    });
+    var savedView = localStorage.getItem('hq-board-view');
+    if (savedView) {
+      radios.forEach(function (r) { if (r.id === savedView) r.checked = true; });
+    }
+    radios.forEach(function (r) {
+      r.addEventListener('change', function () {
+        if (r.checked) localStorage.setItem('hq-board-view', r.id);
+      });
+    });
+  }
 
   // ---- drawer ----
   var drawer = document.getElementById('drawer');
@@ -1345,7 +1446,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var li = e.target.closest && e.target.closest('.msglist li[data-rel]');
     if (li) { openMsg(li.getAttribute('data-rel')); return; }
     // an explicit link wins — let it navigate (project pages, source files)
-    if (e.target.closest && e.target.closest('a')) return;
+    if (e.target.closest && e.target.closest('a, form, button, select, input, textarea, summary, label')) return;
     var el = e.target.closest && e.target.closest('[data-kind]');
     if (!el) return;
     var kind = el.getAttribute('data-kind');
@@ -1363,7 +1464,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 })();
 </script>
 
-<div class="refresh-note">Templeton Systems · F:\\Lab</div>
+<div class="refresh-note">Templeton Systems · %(root)s</div>
 </body>
 </html>
 """

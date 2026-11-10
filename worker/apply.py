@@ -5,7 +5,12 @@ import json
 import re
 from pathlib import Path
 
-LAB = Path(r"F:\Lab")
+try:
+    from labroot import lab_root
+except ImportError:  # imported as worker.apply
+    from worker.labroot import lab_root
+
+LAB = lab_root()
 BUILDS = LAB / "org" / "builds"
 EVENTS = LAB / "org" / "events"
 
@@ -26,7 +31,7 @@ def append_event(agent, type_, **ctx):
     for k, v in ctx.items():
         if v not in (None, ""):
             entry[k] = v
-    with open(EVENTS / _today_file(), "a", encoding="utf-8") as f:
+    with open(EVENTS / _today_file(), "a", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps(entry) + "\n")
 
 
