@@ -1431,7 +1431,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           if (box) { box.hidden = false; box.textContent = plain; }
         });
       }
-      location.href = '/#board/' + project;
+      if (location.hash !== '#board/' + project) { location.hash = 'board/' + project; }
+      location.reload();
     });
   }
   function openBlockModal(id, project) {
