@@ -1361,7 +1361,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (match && ids.indexOf(match[1]) !== -1) picked = match[1];
     if (!picked && window.localStorage && (h === 'board' || h === '')) {
       var saved = localStorage.getItem('hq-board-project');
-      if (saved && ids.indexOf(saved) !== -1) picked = saved;
+      if (saved && ids.indexOf(saved) !== -1 && !projectArchived(saved)) picked = saved;
     }
     if (!picked) picked = root.getAttribute('data-default') || ids[0] || '';
     document.querySelectorAll('.kanban').forEach(function (el) {
@@ -1375,6 +1375,25 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       history.replaceState(null, '', '#board/' + picked);
     }
     applyDoneCollapse();
+    applyArchived();
+  }
+  function projectArchived(id) {
+    var el = document.querySelector(".kanban[data-project='" + id + "']");
+    return !!(el && el.classList.contains('is-archived'));
+  }
+  function applyArchived() {
+    var on = window.localStorage && localStorage.getItem('hq-show-archived') === '1';
+    var root = document.getElementById('hq-board');
+    if (root) root.classList.toggle('show-archived', !!on);
+    var box = document.getElementById('show-archived');
+    if (box) box.checked = !!on;
+    var current = document.querySelector('.kanban.is-current');
+    var archived = current && current.classList.contains('is-archived');
+    var unscoped = current && current.getAttribute('data-project') === 'unscoped';
+    var archBtn = document.getElementById('archive-project');
+    var unBtn = document.getElementById('unarchive-project');
+    if (archBtn) archBtn.hidden = !current || archived || unscoped;
+    if (unBtn) unBtn.hidden = !current || !archived;
   }
   function applyDoneCollapse() {
     var collapsed = window.localStorage && localStorage.getItem('hq-done-collapsed') === '1';
@@ -1435,6 +1454,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       location.reload();
     });
   }
+  function postProject(action, project) {
+    var body = new URLSearchParams();
+    body.set('action', action);
+    body.set('project', project);
+    body.set('actor', actorNow());
+    body.set('back', action === 'archive' ? 'board' : 'board/' + project);
+    fetch('/api/project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.text().then(function (text) {
+          var box = document.getElementById('archive-error');
+          var plain = text.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
+          if (box) { box.hidden = false; box.textContent = plain; }
+        });
+      }
+      if (action === 'archive' && window.localStorage) {
+        localStorage.removeItem('hq-board-project');
+      }
+      var next = action === 'archive' ? '#board' : '#board/' + project;
+      if (location.hash !== next) location.hash = next.replace('#', '');
+      location.reload();
+    });
+  }
   function openBlockModal(id, project) {
     var modal = document.getElementById('block-modal');
     if (!modal) return;
@@ -1461,6 +1506,51 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   if (blockCancel) {
     blockCancel.addEventListener('click', function () {
       document.getElementById('block-modal').hidden = true;
+    });
+  }
+  var archiveBtn = document.getElementById('archive-project');
+  if (archiveBtn) {
+    archiveBtn.addEventListener('click', function () {
+      var current = document.querySelector('.kanban.is-current');
+      var modal = document.getElementById('archive-modal');
+      if (!current || !modal) return;
+      modal.dataset.project = current.getAttribute('data-project');
+      var name = modal.querySelector('.archive-name');
+      if (name) name.textContent = current.getAttribute('data-title') || modal.dataset.project;
+      var box = document.getElementById('archive-error');
+      if (box) { box.hidden = true; box.textContent = ''; }
+      modal.hidden = false;
+    });
+  }
+  var archiveForm = document.getElementById('archive-form');
+  if (archiveForm) {
+    archiveForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var modal = document.getElementById('archive-modal');
+      postProject('archive', modal.dataset.project);
+    });
+  }
+  var archiveCancel = document.getElementById('archive-cancel');
+  if (archiveCancel) {
+    archiveCancel.addEventListener('click', function () {
+      document.getElementById('archive-modal').hidden = true;
+    });
+  }
+  var unarchiveBtn = document.getElementById('unarchive-project');
+  if (unarchiveBtn) {
+    unarchiveBtn.addEventListener('click', function () {
+      var current = document.querySelector('.kanban.is-current');
+      if (!current) return;
+      postProject('unarchive', current.getAttribute('data-project'));
+    });
+  }
+  var showArchived = document.getElementById('show-archived');
+  if (showArchived) {
+    showArchived.addEventListener('change', function () {
+      if (window.localStorage) {
+        localStorage.setItem('hq-show-archived', showArchived.checked ? '1' : '0');
+      }
+      applyArchived();
     });
   }
   document.addEventListener('dragstart', function (e) {

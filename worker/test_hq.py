@@ -2,7 +2,6 @@
 import hashlib
 import json
 import os
-import shutil
 import signal
 import subprocess
 import sys
@@ -20,8 +19,22 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from worker.labroot import lab_root  # noqa: E402
-from worker.mutate import RecordError, post_thread, update_card  # noqa: E402
-import worker.dashboard as dashboard  # noqa: E402
+from worker.mutate import (  # noqa: E402
+    RecordError, post_thread, set_project_archived, update_card)
+
+
+def invented_lab_dir(parent):
+    """The old generator created a child whose name contains a backslash.
+
+    On Windows F:\\Lab is a real drive path, so the check looks for that
+    backslash inside a directory name rather than for the drive itself.
+    """
+    if not parent.is_dir():
+        return None
+    for child in parent.iterdir():
+        if "\\" in child.name:
+            return child
+    return None
 
 
 def org_hashes(root):
@@ -91,6 +104,74 @@ def build_fixture(root):
     decisions.mkdir()
     (decisions / "2026-10-30-swarm-rebuild.md").write_text(
         "---\nid: decision-008\n---\n\n# Do not edit\n", encoding="utf-8")
+
+
+def build_board_fixture(root):
+    """Two live projects plus one that exists only as a card reference.
+
+    swarm-playpen has the most open cards, so it is the default board.
+    Nothing here is read from the checkout's org/.
+    """
+    build_fixture(root)
+    projects = root / "org" / "projects"
+    (projects / "beta.md").write_text(
+        "---\nid: beta\ntitle: Beta\nstatus: active\n---\n\nBeta body.\n",
+        encoding="utf-8",
+    )
+    cards = root / "org" / "cards"
+    (cards / "card-002.md").write_text(
+        "---\n"
+        "id: card-002\n"
+        "title: Beta done\n"
+        "column: done\n"
+        "assignee: qwen\n"
+        "project: beta\n"
+        "---\n\n"
+        "Done card.\n",
+        encoding="utf-8",
+    )
+    (cards / "card-017.md").write_text(
+        "---\n"
+        "id: card-017\n"
+        "title: Ladder step\n"
+        "column: in-progress\n"
+        "assignee: qwen\n"
+        "project: swarm-playpen\n"
+        "---\n\n"
+        "In progress.\n",
+        encoding="utf-8",
+    )
+    (cards / "card-003.md").write_text(
+        "---\n"
+        "id: card-003\n"
+        "title: No project file yet\n"
+        "column: backlog\n"
+        "assignee: unassigned\n"
+        "project: gamma\n"
+        "---\n\n"
+        "Orphan card.\n",
+        encoding="utf-8",
+    )
+    done = root / "org" / "inbox" / "brad" / "done"
+    done.mkdir()
+    (done / "20261015-0335-fixture-ping.md").write_text(
+        "---\nfrom: qwen\nto: brad\nsubject: fixture ping\ncard: card-016\n---\n\n"
+        "Fixture message.\n",
+        encoding="utf-8",
+    )
+
+
+def render_fixture(root):
+    """Generate the dashboard for a fixture. Does not read the live org."""
+    env = dict(os.environ)
+    env["TEMPLETON_LAB"] = str(root)
+    env["PYTHONIOENCODING"] = "utf-8"
+    subprocess.check_call(
+        [sys.executable, "-c", "import dashboard; dashboard.build_page()"],
+        cwd=str(REPO / "worker"),
+        env=env,
+    )
+    return (root / "dashboard" / "index.html").read_text(encoding="utf-8")
 
 
 class Fixture(unittest.TestCase):
@@ -244,40 +325,124 @@ class MutateTests(Fixture):
         self.assertFalse(self.today_log().exists())
         self.assertEqual(list((self.root / "org" / "inbox").rglob("*.md")), [])
 
+    def test_archive_and_unarchive_restore_the_previous_status(self):
+        path = self.root / "org" / "projects" / "swarm-playpen.md"
+        original = path.read_text(encoding="utf-8").replace("status: active", "status: parked")
+        path.write_text(original, encoding="utf-8")
+        body = original.split("---", 2)[2]
+        result = set_project_archived(self.root, "swarm-playpen", "brad", True)
+        self.assertTrue(result["changed"])
+        archived = path.read_text(encoding="utf-8")
+        self.assertIn("status: archived", archived.split("---", 2)[1])
+        self.assertEqual(archived.split("---", 2)[2], body)
+        entry = json.loads(self.today_log().read_text(encoding="utf-8").splitlines()[-1])
+        self.assertEqual(entry["type"], "project_archive")
+        self.assertEqual(entry["project"], "swarm-playpen")
+        self.assertEqual(entry["prior_status"], "parked")
+        self.assertEqual(entry["agent"], "brad")
+        again = set_project_archived(self.root, "swarm-playpen", "brad", True)
+        self.assertFalse(again["changed"])
+        self.assertEqual(len(self.today_log().read_text(encoding="utf-8").splitlines()), 1)
+        restored = set_project_archived(self.root, "swarm-playpen", "brad", False)
+        self.assertTrue(restored["changed"])
+        text = path.read_text(encoding="utf-8")
+        self.assertIn("status: parked", text.split("---", 2)[1])
+        self.assertEqual(text.split("---", 2)[2], body)
+        kinds = [json.loads(line)["type"]
+                 for line in self.today_log().read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(kinds, ["project_archive", "project_unarchive"])
+        self.assertTrue(path.is_file())
+        self.assert_history_intact()
+
+    def test_archive_of_a_card_only_project_creates_a_file(self):
+        card = self.root / "org" / "cards" / "card-003.md"
+        card.write_text(
+            "---\nid: card-003\ntitle: Orphan\ncolumn: backlog\n"
+            "assignee: unassigned\nproject: gamma\n---\n\nOrphan card.\n",
+            encoding="utf-8",
+        )
+        with self.assertRaises(RecordError):
+            set_project_archived(self.root, "unscoped", "brad", True)
+        with self.assertRaises(RecordError):
+            set_project_archived(self.root, "no-such", "brad", True)
+        result = set_project_archived(self.root, "gamma", "brad", True)
+        self.assertTrue(result["changed"])
+        created = self.root / "org" / "projects" / "gamma.md"
+        self.assertTrue(created.is_file())
+        self.assertIn("status: archived", created.read_text(encoding="utf-8"))
+        entry = json.loads(self.today_log().read_text(encoding="utf-8").splitlines()[-1])
+        self.assertEqual(entry["type"], "project_archive")
+        self.assertEqual(entry["project"], "gamma")
+        self.assertIn("created org/projects/gamma.md", entry["note"])
+        set_project_archived(self.root, "gamma", "brad", False)
+        self.assertIn("status: active", created.read_text(encoding="utf-8"))
+        self.assertTrue(created.is_file())
+        self.assertTrue(card.is_file())
+        self.assert_history_intact()
+
 
 class RenderTests(unittest.TestCase):
-    def test_page_shows_the_repo_and_does_not_invent_a_lab_folder(self):
-        stray = REPO / "F:\\Lab"
-        self.assertFalse(stray.exists())
-        count = dashboard.build_page()
-        self.assertGreaterEqual(count, 20)
-        self.assertFalse(stray.exists())
-        html = (REPO / "dashboard" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("card-021", html)
+    def test_page_renders_a_fixture_and_does_not_invent_a_lab_folder(self):
+        self.assertIsNone(invented_lab_dir(REPO))
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        build_board_fixture(root)
+        html = render_fixture(root)
+        self.assertIsNone(invented_lab_dir(REPO))
+        self.assertIsNone(invented_lab_dir(root))
+        self.assertIsNone(invented_lab_dir(REPO / "worker"))
+        self.assertIn("card-016", html)
+        self.assertIn("card-017", html)
         self.assertIn("col-in-progress", html)
         self.assertIn("draggable='true'", html)
-        self.assertIn("data-default='emergent-harness'", html)
-        self.assertIn("data-project='templeton-lab'", html)
-        self.assertIn("data-project='swarm-playpen'", html)
+        self.assertIn("data-default='swarm-playpen'", html)
+        self.assertIn("data-project='beta'", html)
+        self.assertIn("data-project='gamma'", html)
         self.assertIn("data-column='backlog'", html)
         self.assertIn("data-column='in-progress'", html)
         self.assertIn("data-column='blocked'", html)
         self.assertIn("data-column='done'", html)
         self.assertIn("id='block-modal'", html)
+        self.assertIn("id='archive-modal'", html)
+        self.assertIn("id='show-archived'", html)
         self.assertNotIn("By status", html)
         self.assertNotIn("view-kanban", html)
-        self.assertIn("thread/project/emergent-harness", html)
+        self.assertIn("thread/project/swarm-playpen", html)
+        self.assertIn("thread/project/beta", html)
+        self.assertNotIn("thread/project/gamma", html)
         self.assertIn("thread/agent/qwen", html)
-        self.assertIn("v2 smoke-test ping", html)
+        self.assertIn("fixture ping", html)
         self.assertIn("action='/api/card'", html)
         self.assertIn("action='/api/post'", html)
         self.assertNotIn("action='/api/decision'", html)
         self.assertNotIn("col-inprogress", html)
         self.assertEqual(org_hashes(REPO), BEFORE)
 
+    def test_archived_project_leaves_the_picker_default_and_threads(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        build_board_fixture(root)
+        set_project_archived(root, "swarm-playpen", "brad", True)
+        html = render_fixture(root)
+        self.assertIn("is-archived", html)
+        self.assertIn("data-default='gamma'", html)
+        self.assertNotIn("data-default='swarm-playpen'", html)
+        self.assertNotIn("data-pane='thread/project/swarm-playpen'", html)
+        self.assertIn("thread/project/beta", html)
+        self.assertIn("card-016", html)
+        self.assertIn("id='show-archived'", html)
+        start = html.index("data-project='beta' data-title=")
+        beta = html[start:html.index("id='block-modal'", start)]
+        self.assertIn("card-002", beta)
+        self.assertNotIn("card-016", beta)
+        self.assertEqual(org_hashes(REPO), BEFORE)
+
     def test_lab_root_is_this_checkout_unless_overridden(self):
         root = lab_root()
-        self.assertTrue((root / "org" / "cards" / "card-021.md").is_file())
+        self.assertTrue((root / "org").is_dir())
+        self.assertTrue((root / "worker" / "serve.py").is_file())
         old = os.environ.get("TEMPLETON_LAB")
         with tempfile.TemporaryDirectory() as tmp:
             org = Path(tmp) / "org"
@@ -297,9 +462,9 @@ class ServeTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
-        shutil.copytree(REPO / "org", root / "org")
+        build_fixture(root)
         decisions = org_hashes(root)
-        old_event = (root / "org" / "events" / "2026-11-09.jsonl").read_bytes()
+        old_event = (root / "org" / "events" / "2026-10-30.jsonl").read_bytes()
         card = (root / "org" / "cards" / "card-016.md").read_bytes()
         port = "8911"
         env = dict(os.environ)
@@ -328,15 +493,27 @@ class ServeTests(unittest.TestCase):
         self.addCleanup(lambda: _stop(proc))
         base = "http://127.0.0.1:%s" % port
         page = _wait_ok(base + "/", proc, output)
-        self.assertIn("card-021", page)
+        self.assertIn("card-016", page)
+        self.assertIn("data-default='swarm-playpen'", page)
         self.assertIn("Threads", page)
+        with self.assertRaises(urllib.error.HTTPError) as blocked:
+            _post(base + "/api/card", {
+                "id": "card-016",
+                "actor": "brad",
+                "back": "board",
+                "column": "blocked",
+                "note": "",
+            })
+        self.assertEqual(blocked.exception.code, 400)
+        blocked.exception.close()
+        self.assertEqual((root / "org" / "cards" / "card-016.md").read_bytes(), card)
         note = "HQ thread note from the dashboard test."
         _post(base + "/api/post", {
             "actor": "brad",
             "kind": "note",
             "body": note,
-            "project": "emergent-harness",
-            "back": "thread/project/emergent-harness",
+            "project": "swarm-playpen",
+            "back": "thread/project/swarm-playpen",
         })
         again = _get(base + "/")
         self.assertIn(note, again)
@@ -344,7 +521,7 @@ class ServeTests(unittest.TestCase):
         saved = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(saved[-1]["type"], "note")
         self.assertEqual(saved[-1]["agent"], "brad")
-        self.assertEqual(saved[-1]["project"], "emergent-harness")
+        self.assertEqual(saved[-1]["project"], "swarm-playpen")
         self.assertEqual(saved[-1]["note"], note)
         _post(base + "/api/card", {
             "id": "card-016",
@@ -361,17 +538,8 @@ class ServeTests(unittest.TestCase):
         self.assertIn("assignee: qwen", moved)
         self.assertIn("priority: high", moved)
         self.assertIn("due: 2026-12-15", moved)
-        self.assertIn("Parked by Brad", moved)
-        self.assertTrue(moved.index("Parked by Brad") < moved.index("_Dashboard"))
-        with self.assertRaises(urllib.error.HTTPError) as caught:
-            _post(base + "/api/card", {
-                "id": "card-013",
-                "actor": "brad",
-                "back": "board",
-                "column": "blocked",
-                "note": "",
-            })
-        self.assertEqual(caught.exception.code, 400)
+        self.assertIn("do not delete this sentence", moved)
+        self.assertLess(moved.index("do not delete this sentence"), moved.index("_Dashboard"))
         with urllib.request.urlopen(base + "/raw/org/cards/card-016.md", timeout=5) as raw:
             self.assertEqual(raw.status, 200)
             self.assertIn(b"column: review", raw.read())
@@ -379,14 +547,14 @@ class ServeTests(unittest.TestCase):
             urllib.request.urlopen(base + "/raw/../etc/passwd", timeout=5)
         self.assertEqual(missing.exception.code, 404)
         missing.exception.close()
-        self.assertEqual((root / "org" / "events" / "2026-11-09.jsonl").read_bytes(), old_event)
-        # decisions were not part of the write, so their bytes match the copy
+        self.assertEqual((root / "org" / "events" / "2026-10-30.jsonl").read_bytes(), old_event)
         for path, digest in decisions.items():
             if path.startswith("org/decisions/"):
                 current = hashlib.sha256((root / path).read_bytes()).hexdigest()
                 self.assertEqual(current, digest, path)
         self.assertNotEqual((root / "org" / "cards" / "card-016.md").read_bytes(), card)
-        self.assertFalse((REPO / "F:\\Lab").exists())
+        self.assertIsNone(invented_lab_dir(REPO))
+        self.assertEqual(org_hashes(REPO), BEFORE)
 
     def test_drag_to_status_appends_one_event_and_blocked_needs_a_note(self):
         """The board drag posts /api/card with only the new column.
@@ -396,9 +564,9 @@ class ServeTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
-        shutil.copytree(REPO / "org", root / "org")
+        build_fixture(root)
         decisions = (root / "org" / "decisions" / "2026-10-30-swarm-rebuild.md").read_bytes()
-        old_event = (root / "org" / "events" / "2026-11-09.jsonl").read_bytes()
+        old_event = (root / "org" / "events" / "2026-10-30.jsonl").read_bytes()
         port = "8912"
         proc, output = _start_server(root, port)
         self.addCleanup(lambda: _stop(proc))
@@ -444,7 +612,7 @@ class ServeTests(unittest.TestCase):
         self.assertIn("#board/swarm-playpen", location)
         moved = (root / "org" / "cards" / "card-016.md").read_text(encoding="utf-8")
         self.assertIn("column: blocked", moved)
-        self.assertLess(moved.index("Parked by Brad"), moved.index("_Dashboard"))
+        self.assertLess(moved.index("do not delete this sentence"), moved.index("_Dashboard"))
         messages = list((root / "org" / "inbox" / "brad").glob("*.md"))
         self.assertEqual(len(messages), 1)
         filed = messages[0].read_text(encoding="utf-8")
@@ -454,10 +622,54 @@ class ServeTests(unittest.TestCase):
         kinds = [json.loads(line)["type"] for line in log.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(kinds, ["card_claim", "card_update", "message"])
         self.assertEqual(
-            (root / "org" / "events" / "2026-11-09.jsonl").read_bytes(), old_event)
+            (root / "org" / "events" / "2026-10-30.jsonl").read_bytes(), old_event)
+        self.assertEqual(org_hashes(REPO), BEFORE)
+        self.assertIsNone(invented_lab_dir(REPO))
         self.assertEqual(
             (root / "org" / "decisions" / "2026-10-30-swarm-rebuild.md").read_bytes(),
             decisions)
+
+    def test_archive_over_http_hides_the_project_until_unarchive(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        build_board_fixture(root)
+        port = "8913"
+        proc, output = _start_server(root, port)
+        self.addCleanup(lambda: _stop(proc))
+        base = "http://127.0.0.1:%s" % port
+        _wait_ok(base + "/", proc, output)
+        code, location = _post_status(base + "/api/project", {
+            "action": "archive",
+            "project": "swarm-playpen",
+            "actor": "brad",
+            "back": "board",
+        })
+        self.assertEqual(code, 303)
+        self.assertIn("#board", location)
+        page = _get(base + "/")
+        self.assertIn("is-archived", page)
+        self.assertIn("data-default='gamma'", page)
+        self.assertNotIn("data-pane='thread/project/swarm-playpen'", page)
+        text = (root / "org" / "projects" / "swarm-playpen.md").read_text(encoding="utf-8")
+        self.assertIn("status: archived", text.split("---", 2)[1])
+        self.assertIn("Playpen.", text.split("---", 2)[2])
+        code, location = _post_status(base + "/api/project", {
+            "action": "unarchive",
+            "project": "swarm-playpen",
+            "actor": "brad",
+            "back": "board/swarm-playpen",
+        })
+        self.assertEqual(code, 303)
+        self.assertIn("#board/swarm-playpen", location)
+        restored = (root / "org" / "projects" / "swarm-playpen.md").read_text(encoding="utf-8")
+        self.assertIn("status: active", restored.split("---", 2)[1])
+        self.assertIn("Playpen.", restored)
+        kinds = [json.loads(line)["type"] for line in (
+            root / "org" / "events" / ("%s.jsonl" % datetime.now().date().isoformat())
+        ).read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(kinds, ["project_archive", "project_unarchive"])
+        self.assertEqual(org_hashes(REPO), BEFORE)
 
 
 def _start_server(root, port):

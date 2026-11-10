@@ -29,8 +29,10 @@ Then open http://localhost:8901 . The server uses the checkout that contains
 clone. The page is the control surface: a kanban of one project at a time (drag a
 card between columns to change its status; the project is in the URL) and a
 thread per project and per agent, built from `org/inbox/` (including `done/`)
-and `org/events/`. Saving a card updates that card's frontmatter and appends
-one event line. Posting a message writes a new file in `org/inbox/<recipient>/`
+and `org/events/`. Archive sets that project's `status: archived` and appends
+one event; the board and its thread hide, and Show archived plus Unarchive
+bring them back. Nothing is deleted. Saving a card updates that card's
+frontmatter and appends one event line. Posting a message writes a new file in `org/inbox/<recipient>/`
 and appends a `message` event. Posting a note appends a `note` event. Nothing
 is deleted, event lines are not rewritten, and `org/decisions/` is not
 editable from the page. `python worker/dashboard.py` still regenerates

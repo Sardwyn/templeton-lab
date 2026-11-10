@@ -108,7 +108,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split("?", 1)[0].split("#", 1)[0]
-        if path not in ("/api/card", "/api/post"):
+        if path not in ("/api/card", "/api/post", "/api/project"):
             self._text(404, "not found")
             return
         if "application/x-www-form-urlencoded" not in self.headers.get("Content-Type", ""):
@@ -140,6 +140,19 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 print("hq card %s changed=%s" % (
                     field(fields, "id") or "?", result.get("changed")), flush=True)
+            elif path == "/api/project":
+                action = (field(fields, "action") or "").strip()
+                if action not in ("archive", "unarchive"):
+                    raise mutate.RecordError("archive or unarchive")
+                result = mutate.set_project_archived(
+                    lab_root(),
+                    field(fields, "project") or "",
+                    field(fields, "actor") or "",
+                    action == "archive",
+                )
+                print("hq project %s %s changed=%s" % (
+                    action, field(fields, "project") or "?", result.get("changed")),
+                    flush=True)
             else:
                 mutate.post_thread(
                     lab_root(),

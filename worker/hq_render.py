@@ -25,6 +25,16 @@ EXTRA_CSS = """
   color: var(--dim); background: transparent;
 }
 .proj-picker a.is-current { color: var(--text); border-color: var(--accent); background: #21262d; }
+.proj-picker a.is-archived { display: none; }
+#hq-board.show-archived .proj-picker a.is-archived,
+.proj-picker a.is-archived.is-current { display: inline-block; }
+.board-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.board-tools button, .show-arch {
+  background: #21262d; color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit;
+}
+.show-arch { display: flex; gap: 6px; align-items: center; color: var(--dim); font-size: 13px; }
+.board-tools button[hidden] { display: none; }
 .kanban { display: none; gap: 12px; align-items: stretch; overflow-x: auto; padding-bottom: 16px; }
 .kanban.is-current { display: flex; }
 .lane {
@@ -151,9 +161,11 @@ def board_views(cards, projects, agents, ref_cell, esc, today):
     agent_ids = [a.get("id") for a in agents if a.get("id")]
     catalog = _catalog(cards, projects)
     default = _default_project(catalog, cards)
-    open_n = sum(1 for c in cards if (c.get("column") or "") != "done")
+    open_n = sum(1 for c in cards if (c.get("column") or "") != "done"
+                 and not _is_archived(catalog.get((c.get("project") or "").strip() or "unscoped", {})))
     intro = ("%d open. Drag a card to another column to change its status. "
-             "That writes the card and appends one event. Done can collapse, and it stays a column."
+             "That writes the card and appends one event. Done can collapse, and it stays a column. "
+             "Archive hides a project without deleting it."
              % open_n)
     order = sorted(catalog, key=lambda pid: (-_open_count(pid, cards), pid))
     tabs = []
@@ -161,14 +173,33 @@ def board_views(cards, projects, agents, ref_cell, esc, today):
     for pid in order:
         project = catalog[pid]
         owned = _cards_for(pid, cards)
-        current = " is-current" if pid == default else ""
+        classes = []
+        if pid == default:
+            classes.append("is-current")
+        if _is_archived(project):
+            classes.append("is-archived")
+        cls = " ".join(classes)
         title = project.get("title") or pid
+        mark = " <span class='dim'>archived</span>" if _is_archived(project) else ""
         tabs.append(
-            "<a href='#board/%s' data-project='%s' class='%s'>%s <span class='kcount'>%d</span></a>"
-            % (esc(pid), esc(pid), current.strip(), esc(title), _open_count(pid, cards)))
+            "<a href='#board/%s' data-project='%s' class='%s'>%s%s <span class='kcount'>%d</span></a>"
+            % (esc(pid), esc(pid), esc(cls), esc(title), mark, _open_count(pid, cards)))
+        kanban_cls = "kanban"
+        if pid == default:
+            kanban_cls += " is-current"
+        if _is_archived(project):
+            kanban_cls += " is-archived"
         boards.append(
-            "<div class='kanban%s' data-project='%s'>%s</div>"
-            % (current, esc(pid), _lanes(owned, agent_ids, esc, today, pid)))
+            "<div class='%s' data-project='%s' data-title='%s'>%s</div>"
+            % (kanban_cls, esc(pid), esc(title),
+               _lanes(owned, agent_ids, esc, today, pid)))
+    tools = (
+        "<div class='board-tools'>"
+        "<button type='button' id='archive-project'>Archive</button>"
+        "<button type='button' id='unarchive-project' hidden>Unarchive</button>"
+        "<label class='show-arch'><input type='checkbox' id='show-archived'> Show archived</label>"
+        "</div>"
+    )
     modal = (
         "<div class='modal' id='block-modal' hidden>"
         "<form id='block-form'>"
@@ -181,11 +212,21 @@ def board_views(cards, projects, agents, ref_cell, esc, today):
         "<div class='row'><button type='submit'>Move to blocked</button>"
         "<button type='button' id='block-cancel'>Cancel</button></div>"
         "</form></div>"
+        "<div class='modal' id='archive-modal' hidden>"
+        "<form id='archive-form'>"
+        "<p class='modal-title'>Archive this board?</p>"
+        "<p class='sub'><span class='archive-name'></span> leaves the board picker "
+        "and the thread list. Nothing is deleted. Show archived lists it again, "
+        "and Unarchive puts the previous status back.</p>"
+        "<p class='block-error' id='archive-error' hidden></p>"
+        "<div class='row'><button type='submit'>Archive</button>"
+        "<button type='button' id='archive-cancel'>Cancel</button></div>"
+        "</form></div>"
     )
     html = (
         "<div id='hq-board' data-default='%s'>"
-        "<nav class='proj-picker' aria-label='Project'>%s</nav>%s%s</div>"
-        % (esc(default), "".join(tabs), "".join(boards), modal)
+        "<nav class='proj-picker' aria-label='Project'>%s</nav>%s%s%s</div>"
+        % (esc(default), "".join(tabs), tools, "".join(boards), modal)
     )
     return intro, html
 
@@ -248,11 +289,18 @@ def _open_count(pid, cards):
     return sum(1 for card in _cards_for(pid, cards) if (card.get("column") or "") != "done")
 
 
+def _is_archived(project):
+    return (project.get("status") or "").strip().lower() == "archived"
+
+
 def _default_project(catalog, cards):
-    """The project with the most open cards. Ties break on id, so the choice is stable."""
-    if not catalog:
+    """The live project with the most open cards. Ties break on id."""
+    live = {pid: project for pid, project in catalog.items()
+            if not _is_archived(project)}
+    pool = live or catalog
+    if not pool:
         return ""
-    return max(sorted(catalog), key=lambda pid: _open_count(pid, cards))
+    return max(sorted(pool), key=lambda pid: _open_count(pid, cards))
 
 
 def _lane_names(cards):
@@ -398,7 +446,7 @@ def _assemble(cards, projects, agents, events, messages, pointer, names,
     for project in sorted(projects, key=lambda p: (
             (p.get("status") or "") != "active", p.get("id") or "")):
         pid = project.get("id")
-        if not pid:
+        if not pid or _is_archived(project):
             continue
         pcards = [c for c in cards if c.get("project") == pid]
         open_n = sum(1 for c in pcards if c.get("column") != "done")
@@ -559,7 +607,7 @@ def _composer(channel, agent_ids, projects, esc):
         options = ["<option value=''>no project</option>"]
         for project in projects:
             pid = project.get("id")
-            if pid:
+            if pid and not _is_archived(project):
                 options.append("<option value='%s'>%s</option>" % (esc(pid), esc(pid)))
         project_field = "<label>Project <select name='project'>%s</select></label>" % "".join(options)
     return (
@@ -573,7 +621,7 @@ def _composer(channel, agent_ids, projects, esc):
         "<option value='message'>Message to an inbox</option>"
         "</select></label>"
         "<label>To <select name='to'><option value=''>\u2014</option>%s</select></label>"
-        "<label>Card <input name='card' type='text' placeholder='card-021' autocomplete='off'></label>"
+        "<label>Card <input name='card' type='text' placeholder='card-001' autocomplete='off'></label>"
         "</div>"
         "<input name='subject' type='text' placeholder='Subject, required for a message' autocomplete='off'>"
         "<textarea name='body' required placeholder='Write a note, or a message the recipient will find in their inbox'></textarea>"

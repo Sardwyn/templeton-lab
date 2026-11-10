@@ -371,6 +371,136 @@ def _real_date(value):
     return True
 
 
+def set_project_archived(root, project_id, actor, archived):
+    """Hide or restore a project's board.
+
+    status: archived is current state on org/projects/<id>.md. The previous
+    status comes back on unarchive. A project that exists only as a card
+    reference gets a minimal project file on archive. Nothing is deleted.
+    """
+    actor = _require_actor(root, actor)
+    project_id = (project_id or "").strip()
+    if project_id == "unscoped" or not ID_RE.fullmatch(project_id or ""):
+        raise RecordError("that is not a project")
+    path = root / "org" / "projects" / ("%s.md" % project_id)
+    if archived:
+        return _archive_project(root, path, project_id, actor)
+    return _unarchive_project(root, path, project_id, actor)
+
+
+def _archive_project(root, path, project_id, actor):
+    stamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+    if path.is_file():
+        original, nl = read_text(path)
+        fields, _body = split_frontmatter(original)
+        if fields is None:
+            raise RecordError("project has no frontmatter")
+        prior = (fields.get("status") or "").strip() or "active"
+        if prior.lower() == "archived":
+            return {"changed": False, "event": None, "summary": ""}
+        rewritten = patch_frontmatter(original, {
+            "status": "archived",
+            "updated_at": stamp,
+        })
+        atomic_write(path, rewritten, nl)
+        note = "status %s -> archived" % prior
+        created = False
+    else:
+        if not _cards_name_project(root, project_id):
+            raise RecordError("no such project")
+        prior = "active"
+        original = None
+        nl = "\n"
+        created = True
+        path.parent.mkdir(parents=True, exist_ok=True)
+        write_bytes(path, (
+            "---\n"
+            "id: %s\n"
+            "title: %s\n"
+            "status: archived\n"
+            "updated_at: %s\n"
+            "---\n\n"
+        ) % (project_id, project_id, stamp), "\n")
+        note = "created org/projects/%s.md; status -> archived" % project_id
+    try:
+        entry = append_event(
+            root, actor, "project_archive",
+            project=project_id, prior_status=prior, note=note,
+        )
+    except Exception:
+        if created:
+            if path.is_file():
+                path.unlink()
+        else:
+            atomic_write(path, original, nl)
+        raise
+    return {"changed": True, "event": entry, "summary": note}
+
+
+def _unarchive_project(root, path, project_id, actor):
+    if not path.is_file():
+        raise RecordError("no such project")
+    original, nl = read_text(path)
+    fields, _body = split_frontmatter(original)
+    if fields is None:
+        raise RecordError("project has no frontmatter")
+    current = (fields.get("status") or "").strip()
+    if current.lower() != "archived":
+        return {"changed": False, "event": None, "summary": ""}
+    restored = _archived_from(root, project_id)
+    stamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+    rewritten = patch_frontmatter(original, {
+        "status": restored,
+        "updated_at": stamp,
+    })
+    atomic_write(path, rewritten, nl)
+    note = "status archived -> %s" % restored
+    try:
+        entry = append_event(
+            root, actor, "project_unarchive",
+            project=project_id, note=note,
+        )
+    except Exception:
+        atomic_write(path, original, nl)
+        raise
+    return {"changed": True, "event": entry, "summary": note}
+
+
+def _cards_name_project(root, project_id):
+    folder = root / "org" / "cards"
+    if not folder.is_dir():
+        return False
+    for path in folder.glob("*.md"):
+        text, _nl = read_text(path)
+        fields, _body = split_frontmatter(text)
+        if fields and (fields.get("project") or "").strip() == project_id:
+            return True
+    return False
+
+
+def _archived_from(root, project_id):
+    """Previous status recorded on the latest project_archive line."""
+    folder = root / "org" / "events"
+    prior = ""
+    if folder.is_dir():
+        for path in sorted(folder.glob("*.jsonl")):
+            for line in path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if (entry.get("type") == "project_archive"
+                        and entry.get("project") == project_id
+                        and entry.get("prior_status")):
+                    prior = entry["prior_status"]
+    if not prior or prior.lower() == "archived":
+        return "active"
+    return prior
+
+
 def _summary(fields, changes, note):
     parts = []
     labels = (
