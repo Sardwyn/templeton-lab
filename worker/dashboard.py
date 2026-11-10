@@ -1334,13 +1334,58 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }
   function fromHash() {
     var h = location.hash.replace('#', '') || 'board';
-    activate(document.querySelector('.pane[data-pane="' + h + '"]') ? h : 'board');
+    var pane = (h === 'board' || h.indexOf('board/') === 0) ? 'board' : h;
+    if (!document.querySelector('.pane[data-pane="' + pane + '"]')) pane = 'board';
+    activate(pane);
+    if (pane === 'board') showBoard(h);
     // The timeline is display:none until this call, so scrolling in the same
     // turn is ignored. Wait until it has a height.
     setTimeout(function () {
       var timeline = document.querySelector('.pane.active .timeline');
       if (timeline) timeline.scrollTop = timeline.scrollHeight;
     }, 0);
+  }
+  function boardIds() {
+    var ids = [];
+    document.querySelectorAll('.kanban[data-project]').forEach(function (el) {
+      ids.push(el.getAttribute('data-project'));
+    });
+    return ids;
+  }
+  function showBoard(h) {
+    var root = document.getElementById('hq-board');
+    if (!root) return;
+    var ids = boardIds();
+    var picked = '';
+    var match = new RegExp('^board/([a-z0-9-]+)$').exec(h || '');
+    if (match && ids.indexOf(match[1]) !== -1) picked = match[1];
+    if (!picked && window.localStorage && (h === 'board' || h === '')) {
+      var saved = localStorage.getItem('hq-board-project');
+      if (saved && ids.indexOf(saved) !== -1) picked = saved;
+    }
+    if (!picked) picked = root.getAttribute('data-default') || ids[0] || '';
+    document.querySelectorAll('.kanban').forEach(function (el) {
+      el.classList.toggle('is-current', el.getAttribute('data-project') === picked);
+    });
+    document.querySelectorAll('.proj-picker a').forEach(function (a) {
+      a.classList.toggle('is-current', a.getAttribute('data-project') === picked);
+    });
+    if (picked && window.localStorage) localStorage.setItem('hq-board-project', picked);
+    if (picked && location.hash.replace('#', '') !== 'board/' + picked) {
+      history.replaceState(null, '', '#board/' + picked);
+    }
+    applyDoneCollapse();
+  }
+  function applyDoneCollapse() {
+    var collapsed = window.localStorage && localStorage.getItem('hq-done-collapsed') === '1';
+    document.querySelectorAll('.lane-done').forEach(function (lane) {
+      lane.classList.toggle('is-collapsed', collapsed);
+      var btn = lane.querySelector('.collapse-done');
+      if (btn) {
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        btn.textContent = collapsed ? 'done (show)' : 'done';
+      }
+    });
   }
   window.addEventListener('hashchange', fromHash);
   fromHash();
@@ -1353,23 +1398,112 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }
   if (actorSel) actorSel.addEventListener('change', syncActor);
   document.addEventListener('submit', function () { syncActor(); }, true);
-  var doneBox = document.getElementById('show-done');
-  var radios = document.querySelectorAll('input[name="board-view"]');
-  if (doneBox && window.localStorage) {
-    if (localStorage.getItem('hq-show-done') === '1') doneBox.checked = true;
-    doneBox.addEventListener('change', function () {
-      localStorage.setItem('hq-show-done', doneBox.checked ? '1' : '0');
-    });
-    var savedView = localStorage.getItem('hq-board-view');
-    if (savedView) {
-      radios.forEach(function (r) { if (r.id === savedView) r.checked = true; });
-    }
-    radios.forEach(function (r) {
-      r.addEventListener('change', function () {
-        if (r.checked) localStorage.setItem('hq-board-view', r.id);
-      });
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.collapse-done');
+    if (!btn || !window.localStorage) return;
+    var collapsed = localStorage.getItem('hq-done-collapsed') === '1';
+    localStorage.setItem('hq-done-collapsed', collapsed ? '0' : '1');
+    applyDoneCollapse();
+  });
+
+  var dragId = '';
+  var justDragged = false;
+  function actorNow() {
+    return actorSel && actorSel.value ? actorSel.value : 'brad';
+  }
+  function postMove(id, column, project, note) {
+    var body = new URLSearchParams();
+    body.set('id', id);
+    body.set('actor', actorNow());
+    body.set('column', column);
+    body.set('back', 'board/' + project);
+    if (note) body.set('note', note);
+    fetch('/api/card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.text().then(function (text) {
+          var box = document.getElementById('block-error');
+          var plain = text.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
+          if (box) { box.hidden = false; box.textContent = plain; }
+        });
+      }
+      location.href = '/#board/' + project;
     });
   }
+  function openBlockModal(id, project) {
+    var modal = document.getElementById('block-modal');
+    if (!modal) return;
+    modal.dataset.id = id;
+    modal.dataset.project = project;
+    var box = document.getElementById('block-error');
+    if (box) { box.hidden = true; box.textContent = ''; }
+    var area = modal.querySelector('textarea');
+    if (area) { area.value = ''; }
+    modal.hidden = false;
+    if (area) area.focus();
+  }
+  var blockForm = document.getElementById('block-form');
+  if (blockForm) {
+    blockForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var modal = document.getElementById('block-modal');
+      var note = (modal.querySelector('textarea').value || '').trim();
+      if (!note) return;
+      postMove(modal.dataset.id, 'blocked', modal.dataset.project, note);
+    });
+  }
+  var blockCancel = document.getElementById('block-cancel');
+  if (blockCancel) {
+    blockCancel.addEventListener('click', function () {
+      document.getElementById('block-modal').hidden = true;
+    });
+  }
+  document.addEventListener('dragstart', function (e) {
+    var tile = e.target.closest && e.target.closest('.tile[data-id]');
+    if (!tile) return;
+    dragId = tile.getAttribute('data-id');
+    justDragged = true;
+    tile.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', dragId);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  document.addEventListener('dragend', function () {
+    dragId = '';
+    document.querySelectorAll('.tile.dragging, .lane.drop-hover').forEach(function (el) {
+      el.classList.remove('dragging');
+      el.classList.remove('drop-hover');
+    });
+    setTimeout(function () { justDragged = false; }, 0);
+  });
+  document.addEventListener('dragover', function (e) {
+    var lane = e.target.closest && e.target.closest('.lane[data-column]');
+    if (!lane || !dragId) return;
+    e.preventDefault();
+    document.querySelectorAll('.lane.drop-hover').forEach(function (el) {
+      if (el !== lane) el.classList.remove('drop-hover');
+    });
+    lane.classList.add('drop-hover');
+  });
+  document.addEventListener('drop', function (e) {
+    var lane = e.target.closest && e.target.closest('.lane[data-column]');
+    if (!lane) return;
+    e.preventDefault();
+    var id = dragId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
+    lane.classList.remove('drop-hover');
+    if (!id) return;
+    var tile = document.querySelector(".tile[data-id='" + id + "']");
+    if (!tile) return;
+    var column = lane.getAttribute('data-column');
+    if (column === tile.getAttribute('data-column')) return;
+    var board = tile.closest('.kanban');
+    var project = board ? board.getAttribute('data-project') : '';
+    if (column === 'blocked') { openBlockModal(id, project); return; }
+    postMove(id, column, project, '');
+  });
 
   // ---- drawer ----
   var drawer = document.getElementById('drawer');
@@ -1389,7 +1523,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     var item = a[id];
     if (!item) { closeDrawer(); return; }
     dtitle.textContent = title || id;
-    var html = metaTable(item.meta || {});
+    var html = '';
+    if (kind === 'cards') {
+      var panel = document.querySelector(".tile[data-id='" + id + "'] .edit-panel");
+      if (panel) html += panel.innerHTML;
+    }
+    html += metaTable(item.meta || {});
     if (item.body) html += '<div class="drawer-body">' + esc(item.body) + '</div>';
     if (item.path) html += '<div class="drawer-src">source: <a class="fp" href="' + fhref(item.path) + '" target="_blank">' + esc(item.win || item.path) + '</a></div>';
     dcontent.innerHTML = html;
@@ -1443,6 +1582,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   // ---- click routing ----
   document.addEventListener('click', function (e) {
+    if (justDragged) { justDragged = false; return; }
     var li = e.target.closest && e.target.closest('.msglist li[data-rel]');
     if (li) { openMsg(li.getAttribute('data-rel')); return; }
     // an explicit link wins — let it navigate (project pages, source files)

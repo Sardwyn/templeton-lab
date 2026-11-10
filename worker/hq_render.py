@@ -19,31 +19,88 @@ EXTRA_CSS = """
   border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit;
 }
 .card-form button:hover, .composer button:hover { border-color: var(--accent); }
-.sr { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.switch { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 14px; }
-.switch label {
+.proj-picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+.proj-picker a {
   border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px;
-  cursor: pointer; color: var(--dim);
+  color: var(--dim); background: transparent;
 }
-#view-status:checked ~ .switch label[for="view-status"],
-#view-project:checked ~ .switch label[for="view-project"],
-#view-agent:checked ~ .switch label[for="view-agent"],
-#view-kanban:checked ~ .switch label[for="view-kanban"],
-#show-done:checked ~ .switch label[for="show-done"] {
-  color: var(--text); border-color: var(--accent);
+.proj-picker a.is-current { color: var(--text); border-color: var(--accent); background: #21262d; }
+.kanban { display: none; gap: 12px; align-items: stretch; overflow-x: auto; padding-bottom: 16px; }
+.kanban.is-current { display: flex; }
+.lane {
+  flex: 1 0 240px; min-width: 240px; max-width: 340px; background: #12171e;
+  border: 1px solid var(--border); border-radius: 10px; min-height: 320px;
+  display: flex; flex-direction: column;
 }
-.board-switch .view { display: none; }
-#view-status:checked ~ .view-status { display: block; }
-#view-project:checked ~ .view-project { display: block; }
-#view-agent:checked ~ .view-agent { display: block; }
-#view-kanban:checked ~ .view-kanban { display: block; }
-.board-switch:not(:has(#show-done:checked)) .is-done,
-.board-switch:not(:has(#show-done:checked)) .group-only-done { display: none; }
-.group { margin: 0 0 18px; }
-.group h3 {
-  font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
-  color: var(--dim); margin: 0 0 8px;
+.lane.drop-hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+.lane-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px 8px; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
 }
+.lane-backlog .lane-head { color: var(--dim); }
+.lane-in-progress .lane-head { color: var(--accent); }
+.lane-review .lane-head { color: var(--yellow); }
+.lane-blocked .lane-head { color: var(--red); }
+.lane-done .lane-head { color: var(--green); }
+.collapse-done {
+  background: none; border: none; color: inherit; font: inherit;
+  letter-spacing: inherit; text-transform: inherit; cursor: pointer; padding: 0;
+}
+.lane-cards { display: flex; flex-direction: column; gap: 8px; padding: 0 8px 10px; min-height: 96px; }
+.lane.is-collapsed .lane-cards { display: none; }
+.tile {
+  background: #1c2129; border: 1px solid var(--border); border-left: 4px solid var(--dim);
+  border-radius: 8px; padding: 10px 12px; cursor: grab;
+}
+.tile:active { cursor: grabbing; }
+.tile.dragging { opacity: 0.45; }
+.tile.col-in-progress { border-left-color: var(--accent); }
+.tile.col-review { border-left-color: var(--yellow); }
+.tile.col-blocked { border-left-color: var(--red); }
+.tile.col-done { border-left-color: var(--green); }
+.tile-title { font-weight: 650; margin: 4px 0 2px; }
+.tile-id { font-family: Consolas, monospace; font-size: 12px; }
+.tile-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.pill {
+  font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 8px;
+  border: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.03em;
+}
+.pill.owner { color: var(--accent); font-weight: 600; text-transform: none; letter-spacing: 0; }
+.pill.owner.dim { color: var(--dim); }
+.pill.status-backlog { color: var(--dim); }
+.pill.status-in-progress { color: var(--accent); border-color: var(--accent); }
+.pill.status-review { color: var(--yellow); border-color: var(--yellow); }
+.pill.status-blocked { color: var(--red); border-color: var(--red); }
+.pill.status-done { color: var(--green); border-color: var(--green); }
+.pill.p-urgent, .pill.p-high { color: var(--red); border-color: var(--red); }
+.pill.p-med { color: var(--yellow); border-color: var(--yellow); }
+.pill.p-low { color: var(--dim); }
+.pill.due { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text); }
+.pill.due.overdue { color: var(--red); border-color: var(--red); }
+.edit-panel[hidden] { display: none; }
+.modal[hidden] { display: none; }
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 80;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal form {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 18px; width: 440px; max-width: 92vw;
+}
+.modal-title { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+.modal textarea {
+  width: 100%; min-height: 88px; display: block; margin: 8px 0;
+  background: #0d1117; color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px; font: inherit;
+}
+.modal button {
+  background: #21262d; color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit;
+}
+.modal button[type="submit"] { border-color: var(--red); color: var(--red); }
+.modal .row { display: flex; gap: 8px; }
+.block-error { color: var(--red); font-size: 13px; }
 .card-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .card-form label, .composer label {
   display: flex; gap: 4px; align-items: center; color: var(--dim); font-size: 11px;
@@ -85,29 +142,52 @@ EXTRA_CSS = """
 """
 
 
+# Always-visible lanes. Any other status a card actually uses is inserted
+# after in-progress (review lands there, which is where check-in puts it).
+LANES = ("backlog", "in-progress", "blocked", "done")
+
+
 def board_views(cards, projects, agents, ref_cell, esc, today):
     agent_ids = [a.get("id") for a in agents if a.get("id")]
-    names = {a.get("id"): (a.get("name") or a.get("id")) for a in agents if a.get("id")}
-    open_n = sum(1 for c in cards if c.get("column") != "done")
-    done_n = len(cards) - open_n
-    intro = ("%d open · %d done. Show done reveals the archive. "
-             "Save writes that card's frontmatter and appends one event."
-             % (open_n, done_n))
-    by_status = _groups_by_status(cards)
-    by_project = _groups_by_project(cards, projects)
-    by_agent = _groups_by_agent(cards, agent_ids, names)
-    views = [
-        _switch(),
-        "<div class='view view-status'>%s</div>" % _tables(
-            by_status, agent_ids, ref_cell, esc, today, by_column=False),
-        "<div class='view view-project'>%s</div>" % _tables(
-            by_project, agent_ids, ref_cell, esc, today, by_column=True),
-        "<div class='view view-agent'>%s</div>" % _tables(
-            by_agent, agent_ids, ref_cell, esc, today, by_column=True),
-        "<div class='view view-kanban'><div class='board'>%s</div></div>" % _kanban(
-            cards, agent_ids, ref_cell, esc, today),
-    ]
-    return intro, "\n".join(views) + "</div>"
+    catalog = _catalog(cards, projects)
+    default = _default_project(catalog, cards)
+    open_n = sum(1 for c in cards if (c.get("column") or "") != "done")
+    intro = ("%d open. Drag a card to another column to change its status. "
+             "That writes the card and appends one event. Done can collapse, and it stays a column."
+             % open_n)
+    order = sorted(catalog, key=lambda pid: (-_open_count(pid, cards), pid))
+    tabs = []
+    boards = []
+    for pid in order:
+        project = catalog[pid]
+        owned = _cards_for(pid, cards)
+        current = " is-current" if pid == default else ""
+        title = project.get("title") or pid
+        tabs.append(
+            "<a href='#board/%s' data-project='%s' class='%s'>%s <span class='kcount'>%d</span></a>"
+            % (esc(pid), esc(pid), current.strip(), esc(title), _open_count(pid, cards)))
+        boards.append(
+            "<div class='kanban%s' data-project='%s'>%s</div>"
+            % (current, esc(pid), _lanes(owned, agent_ids, esc, today, pid)))
+    modal = (
+        "<div class='modal' id='block-modal' hidden>"
+        "<form id='block-form'>"
+        "<p class='modal-title'>Move to blocked</p>"
+        "<p class='sub'>What decision is needed? The note is filed in Brad's inbox "
+        "and appended to the event log.</p>"
+        "<textarea name='note' required "
+        "placeholder='The decision this card is waiting on'></textarea>"
+        "<p class='block-error' id='block-error' hidden></p>"
+        "<div class='row'><button type='submit'>Move to blocked</button>"
+        "<button type='button' id='block-cancel'>Cancel</button></div>"
+        "</form></div>"
+    )
+    html = (
+        "<div id='hq-board' data-default='%s'>"
+        "<nav class='proj-picker' aria-label='Project'>%s</nav>%s%s</div>"
+        % (esc(default), "".join(tabs), "".join(boards), modal)
+    )
+    return intro, html
 
 
 def thread_panes(cards, projects, agents, events, messages,
@@ -142,179 +222,111 @@ def thread_panes(cards, projects, agents, events, messages,
     return "\n".join(chunks)
 
 
-def _switch():
-    return (
-        "<div class='board-switch'>"
-        "<input class='sr' type='radio' name='board-view' id='view-status' checked>"
-        "<input class='sr' type='radio' name='board-view' id='view-project'>"
-        "<input class='sr' type='radio' name='board-view' id='view-agent'>"
-        "<input class='sr' type='radio' name='board-view' id='view-kanban'>"
-        "<input class='sr' type='checkbox' id='show-done'>"
-        "<div class='switch'>"
-        "<label for='view-status'>By status</label>"
-        "<label for='view-project'>By project</label>"
-        "<label for='view-agent'>By agent</label>"
-        "<label for='view-kanban'>Kanban</label>"
-        "<label for='show-done'>Show done</label>"
-        "</div>"
-    )
-
-
-def _groups_by_status(cards):
-    columns = list(COLUMNS)
+def _catalog(cards, projects):
+    """Projects on disk, plus any project id a card names that has no file."""
+    found = {}
+    for project in projects:
+        pid = (project.get("id") or "").strip()
+        if pid:
+            found[pid] = project
     for card in cards:
-        column = card.get("column") or "backlog"
-        if column not in columns:
-            columns.append(column)
-    groups = []
-    for column in columns:
-        items = [c for c in cards if (c.get("column") or "backlog") == column]
-        groups.append((column, "", items))
-    return groups
+        pid = (card.get("project") or "").strip()
+        if pid and pid not in found:
+            found[pid] = {"id": pid, "title": pid, "status": ""}
+    if any(not (card.get("project") or "").strip() for card in cards):
+        found["unscoped"] = {"id": "unscoped", "title": "Unscoped", "status": ""}
+    return found
 
 
-def _groups_by_project(cards, projects):
-    order = sorted(projects, key=lambda p: (
-        (p.get("status") or "") != "active", p.get("title") or p.get("id") or ""))
-    groups = []
-    seen = set()
-    for project in order:
-        pid = project.get("id")
-        if not pid:
-            continue
-        seen.add(pid)
-        items = [c for c in cards if c.get("project") == pid]
-        if not items:
-            continue
-        label = "%s · %s" % (project.get("title") or pid, project.get("status") or "?")
-        groups.append((label, pid, items))
-    unknown = [c for c in cards if (c.get("project") or "") not in seen]
-    if unknown:
-        groups.append(("Unscoped", "", unknown))
-    return groups
+def _cards_for(pid, cards):
+    if pid == "unscoped":
+        return [card for card in cards if not (card.get("project") or "").strip()]
+    return [card for card in cards if (card.get("project") or "").strip() == pid]
 
 
-def _groups_by_agent(cards, agent_ids, names):
-    groups = []
-    seen = set()
-    for agent_id in agent_ids:
-        items = [c for c in cards if (c.get("assignee") or "unassigned") == agent_id]
-        if not items:
-            continue
-        seen.add(agent_id)
-        groups.append((names.get(agent_id) or agent_id, agent_id, items))
-    rest = {}
+def _open_count(pid, cards):
+    return sum(1 for card in _cards_for(pid, cards) if (card.get("column") or "") != "done")
+
+
+def _default_project(catalog, cards):
+    """The project with the most open cards. Ties break on id, so the choice is stable."""
+    if not catalog:
+        return ""
+    return max(sorted(catalog), key=lambda pid: _open_count(pid, cards))
+
+
+def _lane_names(cards):
+    extras = []
     for card in cards:
-        assignee = card.get("assignee") or "unassigned"
-        if assignee in seen:
-            continue
-        rest.setdefault(assignee, []).append(card)
-    for assignee in sorted(rest, key=lambda name: (name == "unassigned", name)):
-        groups.append((assignee, "", rest[assignee]))
-    return groups
+        column = (card.get("column") or "backlog").strip() or "backlog"
+        if column not in LANES and column not in extras:
+            extras.append(column)
+    extras.sort(key=lambda name: (name != "review", name))
+    return ("backlog", "in-progress") + tuple(extras) + ("blocked", "done")
 
 
-def _tables(groups, agent_ids, ref_cell, esc, today, by_column):
-    blocks = []
-    for title, _key, items in groups:
-        if not items:
-            continue
-        blocks.append(_table_group(title, items, agent_ids, ref_cell, esc, today, by_column))
-    return "\n".join(blocks) or "<div class='empty'>no cards</div>"
-
-
-def _table_group(title, items, agent_ids, ref_cell, esc, today, by_column):
-    items = _sort_cards(items, by_column)
-    done_n = sum(1 for c in items if c.get("column") == "done")
-    only_done = bool(items) and done_n == len(items)
-    cls = "group group-only-done" if only_done else "group"
-    rows = []
-    for card in items:
-        rows.append(_row(card, agent_ids, ref_cell, esc, today))
-    meta = "%d open / %d done" % (len(items) - done_n, done_n)
-    return (
-        "<section class='%s'><h3>%s <span class='kcount'>%s</span></h3>"
-        "<table><tr><th>Card</th><th>Project</th><th>Owner</th><th>Priority</th>"
-        "<th>Due</th><th>Updated</th><th>Status</th></tr>%s</table></section>"
-        % (cls, esc(title), esc(meta), "".join(rows) or
-           "<tr><td colspan='7'><span class='empty'>nothing here</span></td></tr>")
-    )
-
-
-def _row(card, agent_ids, ref_cell, esc, today):
-    done = " is-done" if card.get("column") == "done" else ""
-    cid = card.get("id") or ""
-    return (
-        "<tr class='clickable%s' data-kind='card' data-id='%s'>"
-        "<td><div class='card-title'>%s</div><div class='cid'>%s</div></td>"
-        "<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>"
-        % (done, esc(cid), esc(card.get("title") or "(no title)"),
-           ref_cell(cid) if cid else "",
-           _project_cell(card, esc),
-           _owner_cell(card, agent_ids, esc),
-           _prio_html(card.get("priority"), esc),
-           _due_html(card, esc, today),
-           esc(card.get("updated_at") or ""),
-           _card_form(card, agent_ids, esc))
-    )
-
-
-def _kanban(cards, agent_ids, ref_cell, esc, today):
-    columns = list(COLUMNS)
-    for card in cards:
-        column = card.get("column") or "backlog"
-        if column not in columns:
-            columns.append(column)
+def _lanes(cards, agent_ids, esc, today, project):
     chunks = []
-    for column in columns:
-        items = [c for c in cards if (c.get("column") or "backlog") == column]
+    for column in _lane_names(cards):
+        items = [card for card in cards if ((card.get("column") or "backlog").strip() or "backlog") == column]
         items = _sort_cards(items, by_column=False)
-        only_done = column == "done" or (bool(items) and all(
-            c.get("column") == "done" for c in items))
-        cls = "kcol group-only-done" if only_done else "kcol"
-        cards_html = []
-        for card in items:
-            cid = card.get("id") or ""
-            done = " is-done" if card.get("column") == "done" else ""
-            cards_html.append(
-                "<div class='card clickable col-%s%s' data-kind='card' data-id='%s'>"
-                "<div class='card-head'><span class='assignee'>%s</span></div>"
-                "<div class='cid'>%s</div>"
-                "<div class='card-title'>%s</div>"
-                "<div class='card-meta'>%s · %s · due %s · updated %s</div>"
-                "%s%s</div>"
-                % (esc(column), done, esc(cid),
-                   esc(card.get("assignee") or "unassigned"),
-                   ref_cell(cid) if cid else "",
-                   esc(card.get("title") or "(no title)"),
-                   _project_cell(card, esc),
-                   _prio_html(card.get("priority"), esc),
-                   _due_html(card, esc, today),
-                   esc(card.get("updated_at") or "?"),
-                   _deps(card, ref_cell),
-                   _card_form(card, agent_ids, esc))
-            )
+        tiles = "".join(_tile(card, agent_ids, esc, today, project) for card in items)
+        if not tiles:
+            tiles = "<div class='empty'>drop a card here</div>"
+        if column == "done":
+            label = ("<button type='button' class='collapse-done' aria-expanded='true'>done</button>")
+        else:
+            label = "<span class='lane-name'>%s</span>" % esc(column)
         chunks.append(
-            "<div class='%s'><div class='kcol-head'>%s <span class='kcount'>%d</span></div>"
-            "<div class='kcards'>%s</div></div>"
-            % (cls, esc(column), len(items),
-               "\n".join(cards_html) or "<div class='empty'>\u2014</div>")
+            "<section class='lane lane-%s' data-column='%s'>"
+            "<header class='lane-head'>%s<span class='kcount'>%d</span></header>"
+            "<div class='lane-cards'>%s</div></section>"
+            % (esc(column), esc(column), label, len(items), tiles)
         )
-    return "\n".join(chunks)
+    return "".join(chunks)
 
 
-def _card_form(card, agent_ids, esc):
+def _tile(card, agent_ids, esc, today, project):
+    cid = card.get("id") or ""
+    column = (card.get("column") or "backlog").strip() or "backlog"
+    owner = card.get("assignee") or "unassigned"
+    bits = ["<span class='pill status-%s'>%s</span>" % (esc(column), esc(column))]
+    if owner == "unassigned":
+        bits.append("<span class='pill owner dim'>unassigned</span>")
+    else:
+        bits.append("<span class='pill owner'>%s</span>" % esc(owner))
+    priority = (card.get("priority") or "").strip().lower()
+    if priority:
+        bits.append("<span class='pill p-%s'>%s</span>" % (esc(priority), esc(priority)))
+    due = (card.get("due") or "").strip()
+    if due:
+        overdue = ""
+        if column != "done" and _iso_date(due) and due < today.isoformat():
+            overdue = " overdue"
+        bits.append("<span class='pill due%s'>%s</span>" % (overdue, esc(due)))
+    ident = cid or "(no id)"
+    link = "<a class='fp' href='raw/org/cards/%s.md'>%s</a>" % (esc(cid), esc(ident)) if cid else esc(ident)
+    return (
+        "<article class='tile clickable col-%s' draggable='true' data-kind='card' "
+        "data-id='%s' data-column='%s'>"
+        "<div class='tile-id'>%s</div>"
+        "<div class='tile-title'>%s</div>"
+        "<div class='tile-meta'>%s</div>"
+        "<div class='edit-panel' hidden>%s</div>"
+        "</article>"
+        % (esc(column), esc(cid), esc(column), link,
+           esc(card.get("title") or "(no title)"),
+           "".join(bits),
+           _edit_panel(card, agent_ids, esc, project))
+    )
+
+
+def _edit_panel(card, agent_ids, esc, project):
+    """Owner, priority, and due. Status changes by dragging the card."""
     cid = card.get("id") or ""
     if not cid:
         return ""
-    column = card.get("column") or "backlog"
-    columns = list(COLUMNS)
-    if column not in columns:
-        columns = [column] + columns
-    status = "".join(
-        "<option value='%s'%s>%s</option>" % (esc(name), " selected" if name == column else "", esc(name))
-        for name in columns)
-    people = ["unassigned"] + [a for a in agent_ids if a != "unassigned"]
+    people = ["unassigned"] + [agent for agent in agent_ids if agent != "unassigned"]
     assignee = card.get("assignee") or "unassigned"
     if assignee not in people:
         people.append(assignee)
@@ -330,54 +342,19 @@ def _card_form(card, agent_ids, esc):
             esc(value), " selected" if value == current_p else "", esc(label))
         for value, label in prios)
     due = card.get("due") or ""
+    back = "board/%s" % project if project else "board"
     return (
         "<form method='post' action='/api/card' class='card-form'>"
         "<input type='hidden' name='id' value='%s'>"
         "<input type='hidden' name='actor' value='brad'>"
-        "<input type='hidden' name='back' value='board'>"
-        "<label>Status <select name='column'>%s</select></label>"
-        "<button type='submit'>Save</button>"
-        "<details><summary>Owner, priority, due</summary><div class='fields'>"
+        "<input type='hidden' name='back' value='%s'>"
         "<label>Owner <select name='assignee'>%s</select></label>"
         "<label>Priority <select name='priority'>%s</select></label>"
         "<label>Due <input name='due' type='text' placeholder='YYYY-MM-DD' value='%s' autocomplete='off'></label>"
-        "<label>Note <input name='note' type='text' placeholder='required if you block it' autocomplete='off'></label>"
-        "</div></details></form>"
-        % (esc(cid), status, owners, priority, esc(due))
+        "<button type='submit'>Save</button>"
+        "</form>"
+        % (esc(cid), esc(back), owners, priority, esc(due))
     )
-
-
-def _project_cell(card, esc):
-    pid = card.get("project") or ""
-    if not pid:
-        return "<span class='dim'>unscoped</span>"
-    return "<a href='#proj/%s'>%s</a>" % (esc(pid), esc(pid))
-
-
-def _owner_cell(card, agent_ids, esc):
-    assignee = card.get("assignee") or "unassigned"
-    if assignee == "unassigned":
-        return "<span class='dim'>unassigned</span>"
-    if assignee in agent_ids:
-        return "<a href='#thread/agent/%s'>%s</a>" % (esc(assignee), esc(assignee))
-    return esc(assignee)
-
-
-def _prio_html(priority, esc):
-    priority = (priority or "").strip().lower()
-    if not priority:
-        return "<span class='dim'>\u2014</span>"
-    return "<span class='prio p-%s'>%s</span>" % (esc(priority), esc(priority))
-
-
-def _due_html(card, esc, today):
-    due = (card.get("due") or "").strip()
-    if not due:
-        return "<span class='dim'>\u2014</span>"
-    overdue = ""
-    if card.get("column") != "done" and _iso_date(due) and due < today.isoformat():
-        overdue = " overdue"
-    return "<span class='%s'>%s</span>" % (overdue.strip(), esc(due))
 
 
 def _iso_date(value):
@@ -386,18 +363,6 @@ def _iso_date(value):
     except ValueError:
         return False
     return True
-
-
-def _deps(card, ref_cell):
-    raw = card.get("depends_on") or ""
-    deps = []
-    for piece in raw.replace("[", "").replace("]", "").split(","):
-        piece = piece.strip().strip('"').strip("'")
-        if piece:
-            deps.append(piece)
-    if not deps:
-        return ""
-    return "<div class='deps'>deps: %s</div>" % " &middot; ".join(ref_cell(d) for d in deps)
 
 
 def _sort_cards(cards, by_column):

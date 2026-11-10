@@ -255,9 +255,17 @@ class RenderTests(unittest.TestCase):
         html = (REPO / "dashboard" / "index.html").read_text(encoding="utf-8")
         self.assertIn("card-021", html)
         self.assertIn("col-in-progress", html)
-        self.assertIn("By project", html)
-        self.assertIn("By agent", html)
-        self.assertIn("Show done", html)
+        self.assertIn("draggable='true'", html)
+        self.assertIn("data-default='emergent-harness'", html)
+        self.assertIn("data-project='templeton-lab'", html)
+        self.assertIn("data-project='swarm-playpen'", html)
+        self.assertIn("data-column='backlog'", html)
+        self.assertIn("data-column='in-progress'", html)
+        self.assertIn("data-column='blocked'", html)
+        self.assertIn("data-column='done'", html)
+        self.assertIn("id='block-modal'", html)
+        self.assertNotIn("By status", html)
+        self.assertNotIn("view-kanban", html)
         self.assertIn("thread/project/emergent-harness", html)
         self.assertIn("thread/agent/qwen", html)
         self.assertIn("v2 smoke-test ping", html)
@@ -379,6 +387,123 @@ class ServeTests(unittest.TestCase):
                 self.assertEqual(current, digest, path)
         self.assertNotEqual((root / "org" / "cards" / "card-016.md").read_bytes(), card)
         self.assertFalse((REPO / "F:\\Lab").exists())
+
+    def test_drag_to_status_appends_one_event_and_blocked_needs_a_note(self):
+        """The board drag posts /api/card with only the new column.
+
+        Dropping on blocked is the same write, plus the note the prompt collects.
+        """
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        shutil.copytree(REPO / "org", root / "org")
+        decisions = (root / "org" / "decisions" / "2026-10-30-swarm-rebuild.md").read_bytes()
+        old_event = (root / "org" / "events" / "2026-11-09.jsonl").read_bytes()
+        port = "8912"
+        proc, output = _start_server(root, port)
+        self.addCleanup(lambda: _stop(proc))
+        base = "http://127.0.0.1:%s" % port
+        page = _wait_ok(base + "/", proc, output)
+        self.assertIn("draggable='true'", page)
+        self.assertIn("id='block-modal'", page)
+        code, location = _post_status(base + "/api/card", {
+            "id": "card-016",
+            "actor": "brad",
+            "column": "in-progress",
+            "back": "board/swarm-playpen",
+        })
+        self.assertEqual(code, 303)
+        self.assertIn("#board/swarm-playpen", location)
+        card = (root / "org" / "cards" / "card-016.md").read_text(encoding="utf-8")
+        self.assertIn("column: in-progress", card)
+        self.assertIn("assignee: unassigned", card)
+        log = root / "org" / "events" / ("%s.jsonl" % datetime.now().date().isoformat())
+        lines = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(lines[0]["type"], "card_claim")
+        self.assertEqual(lines[0]["card"], "card-016")
+        self.assertEqual(lines[0]["agent"], "brad")
+        self.assertIn("backlog -> in-progress", lines[0]["note"])
+        code, _location = _post_status(base + "/api/card", {
+            "id": "card-016",
+            "actor": "brad",
+            "column": "blocked",
+            "back": "board/swarm-playpen",
+        })
+        self.assertEqual(code, 400)
+        self.assertIn(
+            "column: in-progress",
+            (root / "org" / "cards" / "card-016.md").read_text(encoding="utf-8"))
+        code, location = _post_status(base + "/api/card", {
+            "id": "card-016",
+            "actor": "brad",
+            "column": "blocked",
+            "note": "Need a ruling before anyone touches the yacht tests",
+            "back": "board/swarm-playpen",
+        })
+        self.assertEqual(code, 303)
+        self.assertIn("#board/swarm-playpen", location)
+        moved = (root / "org" / "cards" / "card-016.md").read_text(encoding="utf-8")
+        self.assertIn("column: blocked", moved)
+        self.assertLess(moved.index("Parked by Brad"), moved.index("_Dashboard"))
+        messages = list((root / "org" / "inbox" / "brad").glob("*.md"))
+        self.assertEqual(len(messages), 1)
+        filed = messages[0].read_text(encoding="utf-8")
+        self.assertIn("to: brad", filed)
+        self.assertIn("card: card-016", filed)
+        self.assertIn("Need a ruling before anyone touches the yacht tests", filed)
+        kinds = [json.loads(line)["type"] for line in log.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(kinds, ["card_claim", "card_update", "message"])
+        self.assertEqual(
+            (root / "org" / "events" / "2026-11-09.jsonl").read_bytes(), old_event)
+        self.assertEqual(
+            (root / "org" / "decisions" / "2026-10-30-swarm-rebuild.md").read_bytes(),
+            decisions)
+
+
+def _start_server(root, port):
+    env = dict(os.environ)
+    env["TEMPLETON_LAB"] = str(root)
+    env["TEMPLETON_PORT"] = str(port)
+    env["PYTHONUNBUFFERED"] = "1"
+    kwargs = {}
+    if os.name != "nt":
+        kwargs["start_new_session"] = True
+    proc = subprocess.Popen(
+        [sys.executable, str(REPO / "worker" / "serve.py")],
+        cwd=str(REPO),
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        **kwargs,
+    )
+    output = []
+
+    def drain():
+        for line in proc.stdout:
+            output.append(line)
+
+    threading.Thread(target=drain, daemon=True).start()
+    return proc, output
+
+
+def _post_status(url, fields):
+    """POST without following the redirect, the way a drag records the move."""
+    class _Stop(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+
+    data = urllib.parse.urlencode(fields).encode("utf-8")
+    request = urllib.request.Request(url, data=data, method="POST")
+    opener = urllib.request.build_opener(_Stop)
+    try:
+        response = opener.open(request, timeout=10)
+    except urllib.error.HTTPError as exc:
+        location = exc.headers.get("Location")
+        exc.close()
+        return exc.code, location
+    location = response.headers.get("Location")
+    response.close()
+    return response.status, location
 
 
 def _stop(proc):

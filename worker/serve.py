@@ -25,7 +25,7 @@ from labroot import lab_root  # noqa: E402
 PORT = int(os.environ.get("TEMPLETON_PORT", "8901"))
 SKIP_PARTS = {".git", "__pycache__", "swarm", "node_modules", ".venv"}
 BACK_RE = re.compile(
-    r"thread/(?:general|project/[a-z0-9-]+|agent/[a-z0-9-]+)|proj/[a-z0-9-]+")
+    r"board/[a-z0-9-]+|thread/(?:general|project/[a-z0-9-]+|agent/[a-z0-9-]+)|proj/[a-z0-9-]+")
 PLAIN_BACK = {"board", "threads", "projects", "pings", "roster",
               "decisions", "memory", "builds", "events"}
 

@@ -26,11 +26,11 @@ not committed. The dashboard is generated on request. From the repo root
 
 Then open http://localhost:8901 . The server uses the checkout that contains
 `worker/serve.py`, so the same command works in that folder and in any other
-clone. The page is the control surface: a board of cards (status, owner,
-priority, due date, grouped by status, project, or agent) and a thread per
-project and per agent, built from `org/inbox/` (including `done/`) and
-`org/events/`. Saving a card updates that card's frontmatter and appends one
-event line. Posting a message writes a new file in `org/inbox/<recipient>/`
+clone. The page is the control surface: a kanban of one project at a time (drag a
+card between columns to change its status; the project is in the URL) and a
+thread per project and per agent, built from `org/inbox/` (including `done/`)
+and `org/events/`. Saving a card updates that card's frontmatter and appends
+one event line. Posting a message writes a new file in `org/inbox/<recipient>/`
 and appends a `message` event. Posting a note appends a `note` event. Nothing
 is deleted, event lines are not rewritten, and `org/decisions/` is not
 editable from the page. `python worker/dashboard.py` still regenerates
