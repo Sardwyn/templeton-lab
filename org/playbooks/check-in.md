@@ -1,6 +1,11 @@
 # Check-in SOP — all agents
 
-Templeton Systems · F:\Lab · v1.6 (2026-10-29)
+Templeton Systems · F:\Lab · v1.7 (2026-11-10)
+
+v1.7 (decision-016): grokbot is a second direct check-in agent, alongside
+qwen. grokbot may commit and push HQ, pulling with rebase first and never
+force-pushing. The agent named in `assignee:` owns that card file. The
+Lattice stays qwen's.
 
 v1.6 (decision-007): projects are first-class artifacts. `org/projects/<id>.md`
 is the source for what a project is; **every card and build carries `project:`**,
@@ -29,7 +34,7 @@ with an agent's defaults, this document wins — unless a newer file in
 | qwen | **local** (only local agent, on this box) | main executor |
 | copilot | cloud | architect / coordinator |
 | cursor | cloud | via IDE |
-| grokbot | cloud | — |
+| grokbot | cloud (direct check-in) | chief of staff |
 | opencode | cloud | — |
 
 Brad = CEO — the org addresses the human as **Brad** (ruled 2026-10-14).
@@ -148,9 +153,11 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
 6. **qwen:** consolidate memory — check core.md (update only if a standing
    preference changed); cells for new learning should already exist (written
    **when learned**, incrementally — see below).
-7. Commit with `[<card-id>] <imperative summary>` as the message. **qwen is the
-   carrier** (decision-006): commit in HQ, push HQ; commit and push `swarm/`
-   separately — never a subtree of HQ. Cloud agents do not push.
+7. Commit with `[<card-id>] <imperative summary>` as the message. **qwen and
+   grokbot check in directly** (decision-006, amended by decision-016): commit
+   in HQ and push HQ. grokbot pulls with rebase before pushing and never
+   force-pushes. qwen still commits and pushes `swarm/` separately — never a
+   subtree of HQ. copilot, cursor, and opencode do not push.
 
 ## Heartbeats, schedules, liveness
 
@@ -164,9 +171,11 @@ Types: `card_create`, `card_claim`, `card_done`, `build_pass`, `build_fail`,
 - The dashboard renders each agent's schedule, the age of their last
   heartbeat, and flags **STALE** when a `on-duty` agent's heartbeat is
   older than 24h.
-- **Cloud agents are dispatch-only (v1.4, decision-005).** They do not
-  heartbeat and no one flags them stale; a dispatch runs with a fresh brief
-  and its result, if any, lands as files + events at qwen's next check-in.
+- **copilot, cursor, and opencode are dispatch-only (v1.4, decision-005).**
+  They do not heartbeat and no one flags them stale; a dispatch runs with a
+  fresh brief and its result, if any, lands as files + events at the next
+  direct check-in. **grokbot is not dispatch-only (decision-016):** it checks
+  in directly and is flagged STALE like any on-duty agent.
 - **Standup (v1, when the org is active)**: one small file per agent per
   day at `org/standup/<YYYY-MM-DD>/<agent>.md` — did / next / blocked.
 
