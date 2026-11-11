@@ -6,8 +6,8 @@ status: on-duty
 scope: "direct check-in alongside qwen: board, inbox, cards, events, HQ commits and pushes (pull --rebase, never force-push)"
 schedule: "on demand (Brad via Grok Bot)"
 activation: "Grok Bot session with Brad — direct check-in, no paste-in brief required"
-last_heartbeat: 2026-11-11T00:55
-focus: "first check-in under decision-016"
+last_heartbeat: 2026-11-11T01:02
+focus: "Baewatch restart: project entry corrected, cards 022-026 filed"
 ---
 
 ## Charter

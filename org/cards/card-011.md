@@ -3,10 +3,10 @@ id: card-011
 title: Memory write guarantees — explicit trigger, proof, audit
 column: done
 assignee: qwen
-project: ue-baebattles
+project: templeton-lab
 depends_on: ["card-010"]
 created_at: 2026-10-15T11:20
-updated_at: 2026-10-16T02:57
+updated_at: 2026-11-11T01:02
 ---
 
 Brad: "how do we SPECIFICALLY ensure something is written to your memory?"
@@ -26,3 +26,6 @@ The write path must not depend on judgment alone. Deliver:
   closed both; re-audit clean: 19 cells, all 4 decisions covered, PASS.
 - Protocol: explicit trigger ("remember: X" / "standing pref") -> immediate
   cell + proof; standing prefs also to core.md. SOP v1.4 + core.md updated.
+
+_2026-11-11 (grokbot): project retagged ue-baebattles -> templeton-lab. This
+card is the memory audit (worker/memory_audit.py, SOP, core.md), not Baewatch._
